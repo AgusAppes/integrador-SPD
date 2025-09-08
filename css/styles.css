@@ -1,0 +1,208 @@
+* {
+  box-sizing: border-box;
+
+  text-align: center;
+}
+body {
+  margin: 0;
+  background-color: #000000; /* fondo general de la página */
+  color: white;
+  padding-left: 40px;
+}
+
+/* Hero con la imagen */
+.herosection {
+  height: 100vh; /* ocupa toda la altura de la ventana */
+  background-image: url("../img/foto-boliche.jpeg");
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.herosection::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 0;
+}
+
+header, h1, nav, p, .button1 {
+  position: relative;
+  z-index: 1; /* para que quede encima del overlay */
+}
+
+/* Header */
+header {
+  position: fixed; /* queda fijo arriba */
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;           
+  padding: 20px 40px;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 28px;
+  color: #fff;
+}
+
+/* Navegación */
+nav ul {
+  list-style: none;   
+  margin: 0;
+  padding: 0;
+  display: flex;      
+  gap: 20px;        
+}
+
+nav ul li a {
+  text-decoration: none;
+  color: #fff;
+  font-size: 16px;
+  transition: color 0.3s;
+}
+
+nav ul li a:hover {
+  color: #FF00FF; 
+}
+
+/* Contenedor dentro del hero */
+
+.hero .container {
+  text-align: center;
+  margin-top: 100px; /* deja espacio por el header fijo */
+}
+
+/* Botón */
+.button1 {
+  width: 140px;
+  display: inline-block;
+  text-decoration: none;
+  background: transparent;
+  border: 2px solid white;
+  color: white;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 20px;
+  transition: all 0.3s ease;
+}
+
+.button1:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transform: translateY(-5px); /* movimiento sutil al hover */
+}
+.parrafo-eventos{
+  color: #BA55D3;
+  text-align: justify;
+  margin-left: 30px;
+  font-size: 30px;
+}
+.container-eventos {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px;
+  gap: 200px;
+}
+
+.texto-eventos {
+  flex: 1;
+  text-align: left;
+
+
+    /* agregado para la animación */
+  transform: translateX(-100px);
+  opacity: 0;
+  transition: all 1s ease;
+}
+/* Clase para activar la animación */ 
+
+.texto-eventos.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.imagenes-eventos {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+    /* 👇 agregado para la animación */
+  transform: translateX(100px);
+  opacity: 0;
+  transition: all 1s ease;
+}
+.imagenes-eventos.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.imagenes-eventos img {
+  max-width: 100%;
+  height: auto;
+  display: none; /* todas ocultas por defecto */
+}
+
+.imagenes-eventos img.active {
+  display: block; /* solo la activa se muestra */
+}
+.active, .img2, .img3, .img4, .img5 {
+
+  width: 350px;
+}
+
+.container-ubicacion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px;
+  gap: 40px;
+}
+.parrafo-ubicacion{
+  color: #BA55D3;
+  text-align: justify;
+  margin-left: 30px;
+  font-size: 30px;
+}
+/* Estado inicial oculto */
+.texto-ubicacion {
+  flex: 1;
+  transform: translateX(-100px);
+  opacity: 0;
+  transition: all 1s ease;
+}
+
+.mapa-ubicacion {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: translateX(100px);
+  opacity: 0;
+  transition: all 1s ease;
+}
+
+/* Estado visible */
+.texto-ubicacion.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.mapa-ubicacion.show {
+  transform: translateX(0);
+  opacity: 1;
+}
