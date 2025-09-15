@@ -7,7 +7,6 @@ body {
   margin: 0;
   background-color: #000000; /* fondo general de la página */
   color: white;
-  padding-left: 40px;
 }
 
 /* Hero con la imagen */
@@ -205,4 +204,59 @@ nav ul li a:hover {
 .mapa-ubicacion.show {
   transform: translateX(0);
   opacity: 1;
+}
+
+/* ========== BARRA DE NAVEGACIÓN ========== */
+.navbar {
+    background-color: #5f0f40;
+    color: white;
+    padding: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-container {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    height: 60px;
+}
+
+.nav-brand a {
+    color: white;
+    text-decoration: none;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.nav-links {
+    display: flex;
+    gap: 20px;
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+}
+
+.nav-links a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive para navbar */
+@media (max-width: 768px) {
+    .nav-container {
+        flex-direction: column;
+        height: auto;
+        padding: 15px 20px;
+    }
+    
+    .nav-links {
+        margin-top: 10px;
+        gap: 10px;
+    }
 }

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Crear Evento</title>
+    <!-- Estilos base (incluye navbar) -->
+    <link rel="stylesheet" href="../css/styles.css">
     <!-- Estilos del panel de administración -->
     <link rel="stylesheet" href="../css/admin.css">
     <!-- Estilos de las notificaciones toast -->
@@ -15,8 +17,13 @@
     <!-- Container para notificaciones toast -->
     <div id="toast-container" class="toast-container"></div>
     
-    <!-- Panel de Administración -->
-    <div class="admin-panel">
+    <!-- Barra de navegación -->
+    <?php include 'navbar.php'; ?>
+    
+    <!-- Contenido principal -->
+    <div class="main-content">
+        <!-- Panel de Administración -->
+        <div class="admin-panel">
         <h1>Panel de Administración</h1>
         
         
@@ -104,6 +111,7 @@
                     <button type="submit" class="btn btn-primary">Crear Evento</button>
                 </div>
             </form>
+        </div>
         </div>
     </div>
     
