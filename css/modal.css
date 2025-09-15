@@ -35,8 +35,8 @@
 
 /* Header del modal */
 .modal-header {
-    background-color: #f8f9fa;
-    color: #495057;
+    background-color: #5f0f40;
+    color: #ffffff;
     padding: 16px 24px;
     display: flex;
     justify-content: space-between;
@@ -52,7 +52,7 @@
 
 /* Botón cerrar */
 .close {
-    color: #6c757d;
+    color: #ffffff;
     font-size: 24px;
     font-weight: bold;
     cursor: pointer;
@@ -237,4 +237,14 @@
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* Estilos específicos para formulario de eventos */
+.modal-eventos label {
+    text-align: left !important;
+}
+
+.modal-eventos input::placeholder,
+.modal-eventos textarea::placeholder {
+    text-align: left !important;
 }

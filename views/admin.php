@@ -59,7 +59,7 @@
             </div>
         </div>
     </div>
-    
+<!--  ///////////////////////////////////////////// Modal //////////////////////////////////////////////  -->
     <!-- Modal para Crear Evento -->
     <div id="createEventModal" class="modal">
         <div class="modal-content">
@@ -68,32 +68,35 @@
                 <button class="close" onclick="closeModal('createEventModal')">&times;</button>
             </div>
             
-            <form action="../methods/events.php" method="post" id="eventoForm" class="modal-body">
-                <div class="form-group">
-                    <label for="nombre">Nombre del Evento <span class="required">*</span></label>
-                    <input type="text" id="nombre" name="nombre" required>
+            <form action="../methods/events.php" method="post" id="eventoForm" class="modal-body modal-eventos">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nombre">Nombre del Evento <span class="required">*</span></label>
+                        <input type="text" id="nombre" name="nombre" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fecha">Fecha del Evento <span class="required">*</span></label>
+                        <input type="date" id="fecha" name="fecha" required>
+                    </div>
                 </div>
-                
                 <div class="form-group">
                     <label for="descripcion">Descripción <span class="required">*</span></label>
-                    <textarea id="descripcion" name="descripcion" placeholder="Describe el evento..." required></textarea>
+                    <textarea id="descripcion" name="descripcion" placeholder="Descripción del evento..." required></textarea>
                 </div>
                 
-                <div class="form-group">
-                    <label for="fecha">Fecha del Evento <span class="required">*</span></label>
-                    <input type="date" id="fecha" name="fecha" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cupo_total">Cupo Total <span class="required">*</span></label>
+                        <input type="number" id="cupo_total" name="cupo_total" min="1" placeholder="Ej: 100" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="cantidad_anticipadas">Cantidad de Anticipadas <span class="required">*</span></label>
+                        <input type="number" id="cantidad_anticipadas" name="cantidad_anticipadas" min="1" placeholder="Ej: 50" required>
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="cupo_total">Cupo Total <span class="required">*</span></label>
-                    <input type="number" id="cupo_total" name="cupo_total" min="1" placeholder="Ej: 100" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="cantidad_anticipadas">Cantidad de Entradas Anticipadas <span class="required">*</span></label>
-                    <input type="number" id="cantidad_anticipadas" name="cantidad_anticipadas" min="1" placeholder="Ej: 50" required>
-                </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="precio_anticipadas">Precio Anticipadas ($) <span class="required">*</span></label>
@@ -107,7 +110,7 @@
                 </div>
                 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('createEventModal')">Cancelar</button>
+                    <button type="button" class="btn btn-danger" onclick="closeModal('createEventModal')">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Crear Evento</button>
                 </div>
             </form>
