@@ -170,6 +170,43 @@ function crear_evento($datos) {
     }
 }
 
+// Función para listar todos los eventos
+function listar_eventos() {
+    try {
+        $conexion = db_connection();
+        
+        $sql = "SELECT id, nombre, descripcion, fecha, cupo_total, cantidad_anticipadas, precio_anticipadas, precio_en_puerta, banner 
+                FROM eventos 
+                ORDER BY fecha ASC";
+        
+        $stmt = $conexion->prepare($sql);
+        $stmt->execute();
+        
+        $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        return [
+            'success' => true,
+            'message' => 'Eventos obtenidos exitosamente',
+            'data' => $eventos
+        ];
+        
+    } catch (PDOException $e) {
+        error_log("Error en listar_eventos: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error de base de datos: ' . $e->getMessage(),
+            'data' => null
+        ];
+    } catch (Exception $e) {
+        error_log("Error general en listar_eventos: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error interno del servidor',
+            'data' => null
+        ];
+    }
+}
+
 
 // Manejo para formularios PHP
 if ($_POST) {

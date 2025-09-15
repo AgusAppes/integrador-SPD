@@ -1,0 +1,301 @@
+/* ========== ESTILOS DEL CATÁLOGO DE EVENTOS ========== */
+
+/* Contenedor principal */
+.catalog-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header del catálogo */
+.catalog-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 20px 0;
+}
+
+.catalog-header h1 {
+    color: #2c3e50;
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.catalog-header p {
+    color: #6c757d;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+/* Loading spinner */
+.loading {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading p {
+    color: #6c757d;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+/* Mensajes de error y estado vacío */
+.error-message, .no-events {
+    text-align: center;
+    padding: 40px 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    margin: 20px 0;
+}
+
+.error-message {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.btn-retry {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-top: 15px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-retry:hover {
+    background-color: #c82333;
+}
+
+.no-events h2 {
+    color: #6c757d;
+    margin-bottom: 10px;
+}
+
+/* Grid de eventos */
+.events-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    margin-top: 30px;
+}
+
+/* Tarjeta de evento */
+.event-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.event-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Imagen del evento */
+.event-image {
+    width: 100%;
+    height: 250px;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.event-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.event-card:hover .event-image img {
+    transform: scale(1.05);
+}
+
+.no-image {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 500;
+}
+
+/* Contenido de la tarjeta */
+.event-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.event-title {
+    color: #2c3e50;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    line-height: 1.3;
+}
+
+.event-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0 0 15px 0;
+}
+
+/* Información del evento */
+.event-date, .event-capacity {
+    color: #495057;
+    font-size: 0.9rem;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+}
+
+.event-date strong, .event-capacity strong {
+    color: #2c3e50;
+    margin-right: 8px;
+    min-width: 50px;
+}
+
+/* Precios */
+.event-prices {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+    border: 1px solid #e9ecef;
+}
+
+.price-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0;
+}
+
+.price-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.price-value {
+    color: #28a745;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+/* Acciones */
+.event-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 20px;
+}
+
+.event-actions .btn {
+    flex: 1;
+    padding: 10px 15px;
+    font-size: 0.9rem;
+    border-radius: 6px;
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.event-actions .btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.event-actions .btn-primary:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+.event-actions .btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.event-actions .btn-secondary:hover {
+    background-color: #545b62;
+    transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .events-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+    }
+}
+
+@media (max-width: 768px) {
+    .catalog-container {
+        padding: 15px;
+    }
+    
+    .catalog-header h1 {
+        font-size: 2rem;
+    }
+    
+    .events-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .event-actions {
+        flex-direction: column;
+    }
+    
+    .event-actions .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .catalog-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .event-content {
+        padding: 15px;
+    }
+    
+    .event-image {
+        height: 180px;
+    }
+}
