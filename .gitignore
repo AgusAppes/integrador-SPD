@@ -20,3 +20,6 @@ error_log
 *.backup
 *~
 
+# Directorio de imágenes subidas por usuarios
+images/eventos/
+

@@ -5,6 +5,39 @@ require_once '../config/database.php';
 // Header para respuesta JSON (solo para probar en postman - ignorar)
 header('Content-Type: application/json; charset=utf-8');
 
+// Función para procesar la imagen
+function procesar_imagen($archivo) {
+    // Crear directorio si no existe
+    $directorio = '../images/eventos/';
+    if (!file_exists($directorio)) {
+        mkdir($directorio, 0755, true);
+    }
+    
+    // Validar tipo de archivo
+    $tipos_permitidos = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!in_array($archivo['type'], $tipos_permitidos)) {
+        return false;
+    }
+    
+    // Validar tamaño (5MB máximo)
+    $tamaño_maximo = 5 * 1024 * 1024; // 5MB en bytes
+    if ($archivo['size'] > $tamaño_maximo) {
+        return false;
+    }
+    
+    // Generar nombre único para el archivo
+    $extension = pathinfo($archivo['name'], PATHINFO_EXTENSION);
+    $nombre_archivo = uniqid() . '_' . time() . '.' . $extension;
+    $ruta_completa = $directorio . $nombre_archivo;
+    
+    // Mover archivo al directorio
+    if (move_uploaded_file($archivo['tmp_name'], $ruta_completa)) {
+        return 'images/eventos/' . $nombre_archivo; // Ruta relativa para la BD
+    }
+    
+    return false;
+}
+
 
 // Función para crear un nuevo evento
 function crear_evento($datos) {
@@ -18,6 +51,19 @@ function crear_evento($datos) {
                 return [
                     'success' => false,
                     'message' => "El campo '$campo' es requerido",
+                    'data' => null
+                ];
+            }
+        }
+        
+        // Validar y procesar imagen
+        $banner_path = null;
+        if (isset($_FILES['banner']) && $_FILES['banner']['error'] === UPLOAD_ERR_OK) {
+            $banner_path = procesar_imagen($_FILES['banner']);
+            if (!$banner_path) {
+                return [
+                    'success' => false,
+                    'message' => 'Error al procesar la imagen',
                     'data' => null
                 ];
             }
@@ -69,8 +115,8 @@ function crear_evento($datos) {
         }
         
         // Preparar consulta SQL
-        $sql = "INSERT INTO eventos (nombre, descripcion, fecha, cupo_total, cantidad_anticipadas, precio_anticipadas, precio_en_puerta, id_usuario) 
-                VALUES (:nombre, :descripcion, :fecha, :cupo_total, :cantidad_anticipadas, :precio_anticipadas, :precio_en_puerta, :id_usuario)";
+        $sql = "INSERT INTO eventos (nombre, descripcion, fecha, cupo_total, cantidad_anticipadas, precio_anticipadas, precio_en_puerta, banner, id_usuario) 
+                VALUES (:nombre, :descripcion, :fecha, :cupo_total, :cantidad_anticipadas, :precio_anticipadas, :precio_en_puerta, :banner, :id_usuario)";
         
         $stmt = $conexion->prepare($sql);
         
@@ -83,6 +129,7 @@ function crear_evento($datos) {
             ':cantidad_anticipadas' => (int)$datos['cantidad_anticipadas'],
             ':precio_anticipadas' => (float)$datos['precio_anticipadas'],
             ':precio_en_puerta' => (float)$datos['precio_en_puerta'],
+            ':banner' => $banner_path,
             ':id_usuario' => isset($datos['id_usuario']) ? (int)$datos['id_usuario'] : 1 // Por defecto usuario 1
         ]);
         

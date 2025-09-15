@@ -68,7 +68,7 @@
                 <button class="close" onclick="closeModal('createEventModal')">&times;</button>
             </div>
             
-            <form action="../methods/events.php" method="post" id="eventoForm" class="modal-body modal-eventos">
+            <form action="../methods/events.php" method="post" enctype="multipart/form-data" id="eventoForm" class="modal-body modal-eventos">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="nombre">Nombre del Evento <span class="required">*</span></label>
@@ -107,6 +107,12 @@
                         <label for="precio_en_puerta">Precio en Puerta ($) <span class="required">*</span></label>
                         <input type="number" id="precio_en_puerta" name="precio_en_puerta" min="0" step="0.01" placeholder="Ej: 2000.00" required>
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="banner">Banner</label>
+                    <input type="file" id="banner" name="banner" accept="image/*" required>
+                    <small class="form-text">Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB</small>
                 </div>
                 
                 <div class="modal-footer">
