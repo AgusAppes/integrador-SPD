@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log in</title>
+    <!-- Estilos base (incluye navbar) -->
+    <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
-    <h1>HOLAAAAAA</h1>
+    <!-- Barra de navegación -->
+    <?php include 'navbar.php'; ?>
+    <h1>🛠️ En mantenimiento 🛠️</h1>
     <div class="container">
 
     </div>

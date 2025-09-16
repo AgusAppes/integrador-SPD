@@ -111,7 +111,7 @@
 
                 <div class="form-group">
                     <label for="banner">Banner</label>
-                    <input type="file" id="banner" name="banner" accept="image/*" required>
+                    <input type="file" id="banner" name="banner" accept="image/*">
                     <small class="form-text">Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB</small>
                 </div>
                 

@@ -113,9 +113,18 @@ $eventos = $eventos_resultado['success'] ? $eventos_resultado['data'] : [];
                     <?php endforeach; ?>
                 </div>
             <?php else: ?>
-                <div class="no-events">
-                    <h2>No hay eventos disponibles</h2>
-                    <p>Próximamente se agregarán nuevos eventos.</p>
+                <div class="no-events-container">
+                    <div class="event-card no-events-card">
+                        <div class="event-image">
+                            <img src="../img/malpa.png" alt="No hay eventos">
+                            <div class="event-title-overlay">
+                                <h3 class="event-title">No hay eventos próximos</h3>
+                            </div>
+                        </div>
+                        <div class="event-content">
+                            <p class="event-description">Próximamente se agregarán nuevos eventos. ¡Mantente atento!</p>
+                        </div>
+                    </div>
                 </div>
             <?php endif; ?>
         </div>

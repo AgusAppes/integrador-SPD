@@ -12,11 +12,11 @@
     <nav>
       <ul>
         <li><a href="/">Inicio</a></li>
-        <li><a href="?page=login">Iniciar Sesión</a></li>
+        <li><a href="login.php">Iniciar Sesión</a></li>
         <li><a href="register.php">Registrarse</a></li>
-        <li><a href="?page=ubicacion">Ubicación</a></li>
-        <li><a href="?page=eventos">Eventos</a></li>
-        <li><a href="/contact">Contacto</a></li>
+        <li><a href="#container-ubicacion">Ubicación</a></li>
+        <li><a href="#container-eventos">Eventos</a></li>
+        <li><a href="#container-contacto">Contacto</a></li>
       </ul>
     </nav>
   </header>
@@ -30,7 +30,7 @@
   </section>
 
   <!-- SECTION EVENTS -->
-  <main>
+  <main id="container-eventos">
     <div class="container-eventos">
       <div class="texto-eventos">
         <p class="parrafo-eventos">¡En MALPA CLUB tenemos eventos de alto nivel!<br><br>
@@ -50,7 +50,7 @@
   <script src="../js/carrusel.js"></script>
   <script src="../js/animacion-eventos.js"></script>
   <!-- SECTION UBICACION -->
-<div class="container-ubicacion">
+<div id="container-ubicacion" class="container-ubicacion">
   <div class="texto-ubicacion">
     <p class="parrafo-ubicacion">
       Encuéntranos en:<br><br>
@@ -68,7 +68,7 @@
 <script src="../js/animacion-ubicacion.js"></script>
   
   
-  <footer class="footer" >
+  <footer id="container-contacto" class="footer" >
     <p>&copy; 2025 MALPA CLUB.  Todos los derechos reservados.</p>
 
   </footer>
