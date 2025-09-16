@@ -63,37 +63,51 @@ $eventos = $eventos_resultado['success'] ? $eventos_resultado['data'] : [];
                 <div class="events-grid">
                     <?php foreach ($eventos as $evento): ?>
                         <div class="event-card">
-                            <div class="event-image">
-                                <?php 
-                                $imagen_src = !empty($evento['banner']) ? '../' . htmlspecialchars($evento['banner']) : '../img/malpa.png';
-                                ?>
-                                <img src="<?php echo $imagen_src; ?>" alt="<?php echo htmlspecialchars($evento['nombre']); ?>">
-                            </div>
+                            <a href="#" class="event-image-link" onclick="comprarEntrada(<?php echo $evento['id']; ?>)">
+                                <div class="event-image">
+                                    <?php 
+                                    $imagen_src = !empty($evento['banner']) ? '../' . htmlspecialchars($evento['banner']) : '../img/malpa.png';
+                                    ?>
+                                    <img src="<?php echo $imagen_src; ?>" alt="<?php echo htmlspecialchars($evento['nombre']); ?>">
+                                    <div class="event-title-overlay">
+                                        <h3 class="event-title"><?php echo htmlspecialchars($evento['nombre']); ?></h3>
+                                    </div>
+                                    <div class="event-price-overlay">
+                                        <span class="price-tag">$<?php echo number_format($evento['precio_anticipadas'], 0, ',', '.'); ?></span>
+                                    </div>
+                                    <div class="event-hover-overlay">
+                                        <span class="hover-message">Comprá tu anticipada</span>
+                                    </div>
+                                </div>
+                            </a>
                             
                             <div class="event-content">
-                                <h3 class="event-title"><?php echo htmlspecialchars($evento['nombre']); ?></h3>
                                 <p class="event-description"><?php echo htmlspecialchars($evento['descripcion']); ?></p>
                                 
                                 <div class="event-details">
-                                    <div class="event-date">
-                                        <strong>Fecha:</strong> <?php echo date('d/m/Y', strtotime($evento['fecha'])); ?>
+                                    <div class="event-date">📆
+                                        <?php 
+                                        // Configurar local en español
+                                        setlocale(LC_TIME, 'es_ES.UTF-8', 'es_ES', 'spanish');
+                                        
+                                        // Array de días de la semana en español
+                                        $dias_semana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                                        
+                                        // Array de meses en español
+                                        $meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                                                 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                                        
+                                        // Obtener información de la fecha
+                                        $timestamp = strtotime($evento['fecha']);
+                                        $dia_semana = $dias_semana[date('w', $timestamp)];
+                                        $dia = date('j', $timestamp);
+                                        $mes = $meses[date('n', $timestamp)];
+                                        
+                                        echo $dia_semana . ' ' . $dia . ' de ' . $mes;
+                                        ?>
                                     </div>
                                 </div>
                                 
-                                <div class="event-prices">
-                                    <div class="price-item">
-                                        <span class="price-label">Anticipadas:</span>
-                                        <span class="price-value">$<?php echo number_format($evento['precio_anticipadas'], 0, ',', '.'); ?></span>
-                                    </div>
-                                    <div class="price-item">
-                                        <span class="price-label">En puerta:</span>
-                                        <span class="price-value">$<?php echo number_format($evento['precio_en_puerta'], 0, ',', '.'); ?></span>
-                                    </div>
-                                </div>
-                                
-                                <div class="event-actions">
-                                    <button class="btn-primary">Comprar Entrada</button>
-                                </div>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -106,5 +120,13 @@ $eventos = $eventos_resultado['success'] ? $eventos_resultado['data'] : [];
             <?php endif; ?>
         </div>
     </div>
+
+    <script>
+        // Función placeholder para comprar entrada
+        function comprarEntrada(eventoId) {
+            alert(`Funcionalidad de compra para evento ${eventoId} - Por implementar`);
+            return false; // Prevenir navegación del enlace
+        }
+    </script>
 </body>
 </html>
