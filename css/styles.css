@@ -55,14 +55,15 @@ header {
   display: flex;
   justify-content: space-between; 
   align-items: center;           
-  padding: 20px 40px;
+  padding: 15px 30px;
   background-color: rgba(0, 0, 0, 0.6);
   z-index: 1000;
 }
 
-header h1 {
+header img {
   margin: 0;
-  font-size: 28px;
+  width: 100px;
+  height: 50px;
   font-weight: 700;
   color: #fff;
   letter-spacing: -0.5px;

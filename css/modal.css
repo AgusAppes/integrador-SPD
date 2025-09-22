@@ -26,7 +26,7 @@
     border-radius: 8px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     width: 90%;
-    max-width: 600px;
+    max-width: 800px;
     max-height: 90vh;
     overflow: hidden;
     border: 1px solid #dee2e6;
@@ -70,7 +70,7 @@
 /* Cuerpo del modal */
 .modal-body {
     padding: 24px;
-    max-height: 60vh;
+    max-height: 90vh;
     overflow-y: auto;
 }
 

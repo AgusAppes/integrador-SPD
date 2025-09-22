@@ -2,7 +2,7 @@
 // Incluir configuración de la base de datos
 require_once '../config/database.php';
 
-// Función para listar todos los eventos (directamente en la vista)
+// Función para listar todos los eventos
 function listar_eventos() {
     try {
         $conexion = db_connection();

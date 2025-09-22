@@ -7,19 +7,8 @@
     <link rel="stylesheet" type="text/css" href="../css/styles.css">
 </head>
 <body>
-  <header>
-    <h1>Malpa club</h1>
-    <nav>
-      <ul>
-        <li><a href="/">Inicio</a></li>
-        <li><a href="login.php">Iniciar Sesión</a></li>
-        <li><a href="register.php">Registrarse</a></li>
-        <li><a href="#container-ubicacion">Ubicación</a></li>
-        <li><a href="#container-eventos">Eventos</a></li>
-        <li><a href="#container-contacto">Contacto</a></li>
-      </ul>
-    </nav>
-  </header>
+  <!-- include navbar -->
+  <?php include 'navbar.php'; ?>
 
   <!-- Hero section con imagen de fondo -->
   <section class="herosection">
