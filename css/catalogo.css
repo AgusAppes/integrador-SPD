@@ -347,6 +347,50 @@
     transform: translateY(-2px);
 }
 
+/* Estilos para modal de compra exitosa */
+.modal-exito .modal-header {
+    background-color: #28a745 !important;
+    color: white !important;
+}
+
+.modal-exito .close {
+    color: white !important;
+}
+
+.exito-detalle {
+    text-align: center;
+}
+
+.exito-icon {
+    font-size: 48px;
+    color: #28a745;
+    margin-bottom: 16px;
+}
+
+.exito-mensaje {
+    color: #333 !important;
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.exito-serie {
+    color: #666 !important;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+.exito-texto {
+    color: #666 !important;
+    font-size: 14px;
+}
+
+.exito-aviso {
+    color: #333 !important;
+    font-size: 18px;
+    margin-top: 16px;
+    font-weight: 600;
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
     .events-grid {
