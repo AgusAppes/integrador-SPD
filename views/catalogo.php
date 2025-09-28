@@ -1,6 +1,6 @@
 <?php
 // Incluir configuración de la base de datos
-require_once '../config/database.php';
+require_once 'config/database.php';
 
 // Función para listar todos los eventos
 function listar_eventos() {

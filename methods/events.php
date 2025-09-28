@@ -208,19 +208,271 @@ function listar_eventos() {
 }
 
 
-// Manejo para formularios PHP
-if ($_POST) {
-    // Crear nuevo evento con datos del formulario
+// Función para obtener un evento por ID
+function obtener_evento($id) {
+    try {
+        $conexion = db_connection();
+        
+        $sql = "SELECT id, nombre, descripcion, fecha, cupo_total, cantidad_anticipadas, precio_anticipadas, precio_en_puerta, banner 
+                FROM eventos 
+                WHERE id = :id";
+        
+        $stmt = $conexion->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        
+        $evento = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($evento) {
+            return [
+                'success' => true,
+                'message' => 'Evento obtenido exitosamente',
+                'data' => $evento
+            ];
+        } else {
+            return [
+                'success' => false,
+                'message' => 'Evento no encontrado',
+                'data' => null
+            ];
+        }
+        
+    } catch (PDOException $e) {
+        error_log("Error en obtener_evento: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error de base de datos: ' . $e->getMessage(),
+            'data' => null
+        ];
+    }
+}
+
+// Función para actualizar un evento
+function actualizar_evento($datos) {
+    try {
+        $conexion = db_connection();
+        
+        // Validar datos requeridos
+        $campos_requeridos = ['evento_id', 'nombre', 'descripcion', 'fecha', 'cupo_total', 'cantidad_anticipadas', 'precio_anticipadas', 'precio_en_puerta'];
+        foreach ($campos_requeridos as $campo) {
+            if (!isset($datos[$campo]) || empty(trim($datos[$campo]))) {
+                return [
+                    'success' => false,
+                    'message' => "El campo '$campo' es requerido",
+                    'data' => null
+                ];
+            }
+        }
+        
+        // Validar que el evento exista
+        $evento_existente = obtener_evento($datos['evento_id']);
+        if (!$evento_existente['success']) {
+            return $evento_existente;
+        }
+        
+        // Obtener datos actuales del evento
+        $evento_actual = $evento_existente['data'];
+        if ($evento_actual) {
+            $banner_path = $evento_actual['banner'];
+        }
+        
+        // Procesar nueva imagen si se subió
+        if (isset($_FILES['banner']) && $_FILES['banner']['error'] === UPLOAD_ERR_OK) {
+            $nueva_imagen = procesar_imagen($_FILES['banner']);
+            if ($nueva_imagen) {
+                // Eliminar imagen anterior si existe
+                if ($banner_path && file_exists('../' . $banner_path)) {
+                    unlink('../' . $banner_path);
+                }
+                $banner_path = $nueva_imagen;
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Error al procesar la nueva imagen',
+                    'data' => null
+                ];
+            }
+        }
+        
+        // Validaciones de datos
+        if (!is_numeric($datos['cupo_total']) || $datos['cupo_total'] <= 0) {
+            return [
+                'success' => false,
+                'message' => 'El cupo total debe ser un número positivo',
+                'data' => null
+            ];
+        }
+
+        if (!is_numeric($datos['cantidad_anticipadas']) || $datos['cantidad_anticipadas'] <= 0 || $datos['cantidad_anticipadas'] > $datos['cupo_total']) {
+            return [
+                'success' => false,
+                'message' => 'La cantidad de anticipadas debe ser un número positivo y menor o igual al cupo total',
+                'data' => null
+            ];
+        }
+        
+        if (!is_numeric($datos['precio_anticipadas']) || $datos['precio_anticipadas'] < 0) {
+            return [
+                'success' => false,
+                'message' => 'El precio de entradas anticipadas debe ser un número válido',
+                'data' => null
+            ];
+        }
+        
+        if (!is_numeric($datos['precio_en_puerta']) || $datos['precio_en_puerta'] < 0) {
+            return [
+                'success' => false,
+                'message' => 'El precio en puerta debe ser un número válido',
+                'data' => null
+            ];
+        }
+        
+        $fecha = DateTime::createFromFormat('Y-m-d', $datos['fecha']);
+        if (!$fecha) {
+            return [
+                'success' => false,
+                'message' => 'La fecha debe tener el formato YYYY-MM-DD',
+                'data' => null
+            ];
+        }
+        
+        // Preparar consulta SQL de actualización
+        $sql = "UPDATE eventos SET 
+                nombre = :nombre, 
+                descripcion = :descripcion, 
+                fecha = :fecha, 
+                cupo_total = :cupo_total, 
+                cantidad_anticipadas = :cantidad_anticipadas, 
+                precio_anticipadas = :precio_anticipadas, 
+                precio_en_puerta = :precio_en_puerta, 
+                banner = :banner 
+                WHERE id = :id";
+        
+        $stmt = $conexion->prepare($sql);
+        
+        $resultado = $stmt->execute([
+            ':id' => $datos['evento_id'],
+            ':nombre' => trim($datos['nombre']),
+            ':descripcion' => trim($datos['descripcion']),
+            ':fecha' => $datos['fecha'],
+            ':cupo_total' => (int)$datos['cupo_total'],
+            ':cantidad_anticipadas' => (int)$datos['cantidad_anticipadas'],
+            ':precio_anticipadas' => (float)$datos['precio_anticipadas'],
+            ':precio_en_puerta' => (float)$datos['precio_en_puerta'],
+            ':banner' => $banner_path
+        ]);
+        
+        if ($resultado) {
+            return [
+                'success' => true,
+                'message' => 'Evento actualizado exitosamente',
+                'data' => [
+                    'id' => $datos['evento_id'],
+                    'nombre' => trim($datos['nombre'])
+                ]
+            ];
+        } else {
+            return [
+                'success' => false,
+                'message' => 'Error al actualizar el evento',
+                'data' => null
+            ];
+        }
+        
+    } catch (PDOException $e) {
+        error_log("Error en actualizar_evento: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error de base de datos: ' . $e->getMessage(),
+            'data' => null
+        ];
+    } catch (Exception $e) {
+        error_log("Error general en actualizar_evento: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error interno del servidor',
+            'data' => null
+        ];
+    }
+}
+
+// Función para eliminar un evento
+function eliminar_evento($id) {
+    try {
+        $conexion = db_connection();
+        
+        // Obtener los datos del evento para eliminar la imagen
+        $evento = obtener_evento($id);
+        if (!$evento['success']) {
+            return $evento;
+        }
+        
+        $evento_data = $evento['data'];
+        
+        // Eliminar el evento de la base de datos
+        $sql = "DELETE FROM eventos WHERE id = :id";
+        $stmt = $conexion->prepare($sql);
+        $resultado = $stmt->execute([':id' => $id]);
+        
+        if ($resultado) {
+            // Eliminar la imagen del servidor si existe
+            if ($evento_data['banner'] && file_exists('../' . $evento_data['banner'])) {
+                unlink('../' . $evento_data['banner']);
+            }
+            
+            return [
+                'success' => true,
+                'message' => 'Evento eliminado exitosamente',
+                'data' => [
+                    'id' => $id,
+                    'nombre' => $evento_data['nombre']
+                ]
+            ];
+        } else {
+            return [
+                'success' => false,
+                'message' => 'Error al eliminar el evento',
+                'data' => null
+            ];
+        }
+        
+    } catch (PDOException $e) {
+        error_log("Error en eliminar_evento: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error de base de datos: ' . $e->getMessage(),
+            'data' => null
+        ];
+    } catch (Exception $e) {
+        error_log("Error general en eliminar_evento: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error interno del servidor',
+            'data' => null
+        ];
+    }
+}
+
+// Procesar formulario de crear evento
+if ($_POST && !isset($_POST['action'])) {
     $resultado = crear_evento($_POST);
     
     if ($resultado['success']) {
-        // Redirigir de vuelta al formulario con mensaje de éxito
         header('Location: ../views/admin.php?success=' . urlencode($resultado['message']));
-        exit;
     } else {
-        // Redirigir con mensaje de error
         header('Location: ../views/admin.php?error=' . urlencode($resultado['message']));
-        exit;
     }
+    exit;
+}
+
+// Procesar formulario de actualizar evento
+if ($_POST && isset($_POST['action']) && $_POST['action'] === 'update') {
+    $resultado = actualizar_evento($_POST);
+    
+    if ($resultado['success']) {
+        header('Location: ../views/admin-eventos.php?success=' . urlencode($resultado['message']));
+    } else {
+        header('Location: ../views/admin-eventos.php?error=' . urlencode($resultado['message']));
+    }
+    exit;
 }
 ?>

@@ -1,20 +1,30 @@
 <?php
 include 'config/config.php';
 
-// Si no hay parámetro page, mostrar home
-$page = $_GET['page'] ?? null;
+// Definir paginas permitidas
+$paginas_permitidas = ['home', 'login', 'register', 'catalogo', 'admin', 'admin-eventos'];
 
-if ($page === null) {
-    // Página principal - mostrar eventos públicos
+// Si no hay parámetro page, redirigir al home
+if (!isset($_GET['page'])) {
     include 'views/home.php';
-} else {
-    // Redirigir al archivo pasado por el parametro $page de la carpeta views
+    exit;
+}
+
+// Si el parámetro page no está en las paginas permitidas, redirigir al home
+if (!in_array($_GET['page'], $paginas_permitidas)) {
+    include 'views/home.php';
+    exit;
+}
+
+// Si hay parámetro page, y está en las paginas permitidas, cargar la vista correspondiente
+$page = $_GET['page'];
+
+if (in_array($page, $paginas_permitidas)) {
     $file = "views/{$page}.php";
+
     if (file_exists($file)) {
         include $file;
-    } else {
-        // Si no existe, mostrar home
+} else {
         include 'views/home.php';
     }
 }
-?>

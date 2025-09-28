@@ -34,8 +34,8 @@
                 <button class="btn btn-primary" onclick="openModal('createEventModal')">
                     <i class="icon">+</i> Crear Evento
                 </button>
-                <button class="btn btn-secondary">
-                    Ver Eventos
+                <button class="btn btn-secondary" onclick="window.location.href='../index.php?page=admin-eventos'">
+                    Gestionar Eventos
                 </button>
             </div>
         </div>

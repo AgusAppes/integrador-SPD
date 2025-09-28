@@ -14,7 +14,7 @@
   <section class="herosection">
     <div class="container"> 
       <h1 class="h1">Sistema de Tickets</h1> 
-      <a class="button1" href="register.php">Registrarse</a>
+      <a class="button1" href="../index.php?page=register">Registrarse</a>
     </div>
   </section>
 
