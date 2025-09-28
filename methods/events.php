@@ -2,8 +2,6 @@
 //configuración de base de datos
 require_once '../config/database.php';
 
-// Header para respuesta JSON (solo para probar en postman - ignorar)
-header('Content-Type: application/json; charset=utf-8');
 
 // Función para procesar la imagen
 function procesar_imagen($archivo) {
@@ -610,4 +608,3 @@ if ($_GET && isset($_GET['action']) && $_GET['action'] === 'comprar' && isset($_
     }
     exit;
 }
-?>

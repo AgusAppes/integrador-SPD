@@ -176,7 +176,6 @@ $mensaje_exito = isset($_GET['success']) ? urldecode($_GET['success']) : 'Entrad
         <div class="modal-content modal-sm">
             <div class="modal-header">
                 <h2>¡Compra Exitosa!</h2>
-                <button class="close" onclick="closeModal('exitoModal')">&times;</button>
             </div>
             
             <div class="modal-body">

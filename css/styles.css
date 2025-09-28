@@ -276,9 +276,10 @@ nav ul li a:hover {
 
 /* Estilos para tabla de eventos en admin */
 .events-table {
-    width: 100%;
+    width: 98%;
     border-collapse: collapse;
-    margin-top: 1rem;
+    margin-top: 1rem!important;
+    margin-bottom: 1rem!important;
     background: white;
     border-radius: 8px;
     overflow: hidden;
@@ -286,19 +287,31 @@ nav ul li a:hover {
 }
 
 .events-table th {
-    background: #6c5ce7;
+    background: #415a77;
     color: white;
-    padding: 1rem;
+    padding: 10px;
     text-align: left;
     font-weight: 600;
     font-size: 0.9rem;
+    border-right: 1px solid #5a6d8a;
+    text-align: center;
+}
+
+/* efecto para que la ultima columna no tenga borde */
+.events-table th:last-child {
+    border-right: none;
 }
 
 .events-table td {
-    padding: 1rem;
+    padding: 10px;
     border-bottom: 1px solid #eee;
+    border-right: 1px solid #e8e9ea;
     font-size: 0.9rem;
     color: #333;
+}
+ /* efecto para que la ultima columna no tenga borde */
+.events-table td:last-child {
+    border-right: none;
 }
 
 .events-table tr:hover {
@@ -324,6 +337,7 @@ nav ul li a:hover {
     display: grid;
     gap: 1.5rem;
     margin-top: 1rem;
+    justify-items: center;
 }
 
 .event-card-admin {

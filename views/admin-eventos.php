@@ -2,14 +2,26 @@
 // Incluir configuración de la base de datos
 require_once 'config/database.php';
 
-// Función para listar todos los eventos
+// Función para listar todos los eventos con conteo de entradas vendidas
 function listar_eventos() {
     try {
         $conexion = db_connection();
         
-        $sql = "SELECT id, nombre, descripcion, fecha, cupo_total, cantidad_anticipadas, precio_anticipadas, precio_en_puerta, banner 
-                FROM eventos 
-                ORDER BY fecha ASC";
+        $sql = "SELECT 
+                    e.id, 
+                    e.nombre, 
+                    e.descripcion, 
+                    e.fecha, 
+                    e.cupo_total, 
+                    e.cantidad_anticipadas, 
+                    e.precio_anticipadas, 
+                    e.precio_en_puerta, 
+                    e.banner,
+                    COALESCE(COUNT(CASE WHEN ent.id_estado <> 2 THEN 1 END), 0) as vendidas
+                FROM eventos e
+                LEFT JOIN entradas ent ON e.id = ent.id_evento
+                GROUP BY e.id, e.nombre, e.descripcion, e.fecha, e.cupo_total, e.cantidad_anticipadas, e.precio_anticipadas, e.precio_en_puerta, e.banner
+                ORDER BY e.fecha ASC";
         
         $stmt = $conexion->prepare($sql);
         $stmt->execute();
@@ -137,6 +149,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                                     <th>Precio en Puerta</th>
                                     <th>Cupo Total</th>
                                     <th>Anticipadas</th>
+                                    <th>Vendidas</th>
                                     <th>Cupo Disponible</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -146,7 +159,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                                     <?php
                                     $fecha = new DateTime($evento['fecha']);
                                     $fechaFormateada = $fecha->format('d-m-Y');
-                                    $cupoDisponible = $evento['cupo_total'] - $evento['cantidad_anticipadas'];
+                                    $cupoDisponible = $evento['cupo_total'] - $evento['vendidas'];
                                     ?>
                                     <tr>
                                         <td><?php echo htmlspecialchars($evento['nombre']); ?></td>
@@ -155,6 +168,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                                         <td>$<?php echo number_format($evento['precio_en_puerta'], 0, ',', '.'); ?></td>
                                         <td><?php echo $evento['cupo_total']; ?></td>
                                         <td><?php echo $evento['cantidad_anticipadas']; ?></td>
+                                        <td><?php echo $evento['vendidas']; ?></td>
                                         <td><?php echo $cupoDisponible; ?></td>
                                         <td>
                                             <a href="../index.php?page=admin-eventos&edit=<?php echo $evento['id']; ?>" class="btn btn-primary btn-sm">
@@ -246,7 +260,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                 </div>
                 
                 <div class="modal-footer">
-                    <a href="?" class="btn btn-danger">Cancelar</a>
+                    <a href="?page=admin-eventos" class="btn btn-danger">Cancelar</a>
                     <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                 </div>
             </form>
