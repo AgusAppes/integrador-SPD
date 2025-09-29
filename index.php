@@ -1,4 +1,33 @@
 <?php
+/*
+================================================================================
+SISTEMA DE ENRUTAMIENTO SIMPLE - INTEGRADOR SPD
+================================================================================
+
+Este archivo controla la navegación/redirección del sistema.
+Todo el tráfico pasa por aquí mediante el parámetro GET "page".
+
+FUNCIONAMIENTO:
+- Las URLs siguen el patrón: index.php?page=NOMBRE_VISTA
+- Ejemplo: ?page=catalogo carga views/catalogo.php
+- Sin parámetro page: carga views/home.php por defecto
+- Páginas no permitidas: redirige al home automáticamente
+- Cada vez que se agrega una nueva vista, se debe agregar el nombre de la vista en el array $paginas_permitidas
+
+SEGURIDAD:
+- lista de páginas permitidas ($paginas_permitidas)
+- Solo se pueden cargar vistas que estén explícitamente autorizadas
+- Previene inclusión de archivos no deseados
+
+ESTRUCTURA:
+1. Configuración inicial (config.php)
+2. Definición de páginas permitidas
+3. Validación del parámetro page
+4. Redirigir a la vista correspondiente
+
+================================================================================
+*/
+
 include 'config/config.php';
 
 // Definir paginas permitidas
@@ -28,3 +57,5 @@ if (in_array($page, $paginas_permitidas)) {
         include 'views/home.php';
     }
 }
+
+
