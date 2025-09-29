@@ -89,6 +89,11 @@
                             autocomplete="off"
                         >
                         
+                        <!-- Botón de prueba temporal -->
+                        <button type="button" id="test-connection" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin: 10px 0; cursor: pointer;">
+                            Probar Conexión
+                        </button>
+                        
                         <!-- Resultado de la verificación -->
                         <div class="verification-result" id="verification-result" style="display: none;">
                             <!-- Se llena dinámicamente con JavaScript -->
@@ -253,11 +258,9 @@
             // Dividir por comillas y filtrar vacíos / espacios
             const parts = normalized.split('"').map(p => p.trim()).filter(p => p !== '');
 
-            // Ejemplo esperado -> parts: [ "00373226781", "APPES", "AGUSTINA FATIMA", "F", "41273341", "A", "06-08-1997", "29-05-2015", "275" ]
-            // Buscamos la posición de la letra de genero (M/F/O) y luego tomamos el siguiente segmento como DNI
             const genders = ['M', 'F', 'O']; // ampliar si hace falta
             let dni = null;
-            let gender = null;
+            let gender = null;  
             let name = null;
             let surname = null;
             let raw = barcodeData;
@@ -364,6 +367,7 @@
                 return;
             }
 
+            // Mostrar datos parseados temporalmente
             verificationResult.style.display = 'block';
             verificationResult.innerHTML = `
                 <div class="verification-card">
@@ -371,11 +375,78 @@
                     <div><strong>Género:</strong> ${parsed.gender || 'N/A'}</div>
                     <div><strong>Nombre:</strong> ${parsed.name || 'N/A'}</div>
                     <div><strong>Apellido:</strong> ${parsed.surname || 'N/A'}</div>
+                    <div class="processing">Procesando...</div>
                 </div>
             `;
 
-            // Aquí puedes llamar a tu verificación en backend, marcar entrada, etc.
-            // ejemplo: fetch('../methods/verify_dni.php', { method: 'POST', body: JSON.stringify({dni: parsed.dni}) ... })
+            // Enviar datos al backend para procesamiento
+            processDNIWithBackend(parsed.raw);
+        }
+
+        // Función para procesar DNI con el backend
+        async function processDNIWithBackend(dniData) {
+            try {
+                console.log('Enviando datos al backend:', { action: 'scan_dni', dni_data: dniData });
+                
+                const response = await fetch('../methods/reception.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'scan_dni',
+                        dni_data: dniData
+                    })
+                });
+
+                console.log('Respuesta del servidor:', response.status, response.statusText);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Resultado del backend:', result);
+
+                if (result.success) {
+                    displayBackendResult(result);
+                } else {
+                    displayError(result.message);
+                }
+            } catch (error) {
+                console.error('Error completo:', error);
+                displayError(`Error de conexión: ${error.message}`);
+            }
+        }
+
+        // Función para mostrar resultado del backend
+        function displayBackendResult(result) {
+            const user = result.user;
+            const action = result.action;
+            
+            let statusClass = action === 'found' ? 'success' : 'created';
+            let statusText = action === 'found' ? 'Usuario Encontrado' : 'Usuario Creado';
+            
+            verificationResult.innerHTML = `
+                <div class="verification-card ${statusClass}">
+                    <div class="status-header">
+                        <strong>${statusText}</strong>
+                    </div>
+                    <div><strong>DNI:</strong> ${user.dni}</div>
+                    <div><strong>Nombre:</strong> ${user.nombre} ${user.apellido}</div>
+                    <div><strong>Email:</strong> ${user.correo}</div>
+                    <div><strong>Rol:</strong> ${user.id_rol}</div>
+                </div>
+            `;
+        }
+
+        // Función para mostrar errores
+        function displayError(message) {
+            verificationResult.innerHTML = `
+                <div class="verification-error">
+                    <strong>Error:</strong> ${message}
+                </div>
+            `;
         }
 
         // Helper para evitar XSS si muestras raw
@@ -392,6 +463,25 @@
         document.addEventListener('DOMContentLoaded', () => {
             // si ya se inició recepción, enfocamos; si no, enfocamos cuando el panel esté visible
             focusScannerInput();
+            
+            // Botón de prueba de conexión
+            const testBtn = document.getElementById('test-connection');
+            if (testBtn) {
+                testBtn.addEventListener('click', async function() {
+                    try {
+                        const response = await fetch('../methods/test_connection.php');
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            displayError('✅ Conexión exitosa: ' + result.message);
+                        } else {
+                            displayError('❌ Error de conexión: ' + result.message);
+                        }
+                    } catch (error) {
+                        displayError('❌ Error de conexión: ' + error.message);
+                    }
+                });
+            }
         });
 
     </script>
