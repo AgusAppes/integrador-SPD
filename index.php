@@ -31,7 +31,7 @@ ESTRUCTURA:
 include 'config/config.php';
 
 // Definir paginas permitidas
-$paginas_permitidas = ['home', 'login', 'register', 'catalogo', 'admin', 'admin-eventos'];
+$paginas_permitidas = ['home', 'login', 'register', 'catalogo', 'admin', 'admin-eventos', 'reception'];
 
 // Si no hay parámetro page, redirigir al home
 if (!isset($_GET['page'])) {

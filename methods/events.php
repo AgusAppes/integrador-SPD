@@ -477,6 +477,51 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'update') {
     exit;
 }
 
+// Función para obtener eventos activos (para recepción)
+function obtener_eventos_activos() {
+    try {
+        $conexion = db_connection();
+        
+        // Obtener eventos de hoy y futuros
+        $sql = "SELECT id, nombre, descripcion, fecha, cupo_total, cantidad_anticipadas, precio_anticipadas, precio_en_puerta 
+                FROM eventos 
+                WHERE fecha >= CURDATE() 
+                ORDER BY fecha ASC";
+        
+        $stmt = $conexion->prepare($sql);
+        $stmt->execute();
+        
+        $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Formatear fechas para mejor legibilidad
+        foreach ($eventos as &$evento) {
+            $evento['fecha_formateada'] = date('d/m/Y', strtotime($evento['fecha']));
+            $evento['capacidad'] = $evento['cupo_total'];
+        }
+        
+        return [
+            'success' => true,
+            'message' => 'Eventos activos obtenidos exitosamente',
+            'events' => $eventos
+        ];
+        
+    } catch (PDOException $e) {
+        error_log("Error en obtener_eventos_activos: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error al obtener eventos activos',
+            'events' => []
+        ];
+    }
+}
+
+// Procesar solicitud de eventos activos (AJAX)
+if ($_GET && isset($_GET['action']) && $_GET['action'] === 'get_active_events') {
+    header('Content-Type: application/json');
+    echo json_encode(obtener_eventos_activos());
+    exit;
+}
+
 // Procesar eliminación de evento (GET request)
 if ($_GET && isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $resultado = eliminar_evento($_GET['id']);

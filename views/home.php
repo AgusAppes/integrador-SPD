@@ -1,3 +1,7 @@
+<?php
+// Verificar si el usuario está logueado
+$usuario_logueado = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -18,8 +22,15 @@
   <section class="herosection">
     <div class="container"> 
       <h1 class="h1">Sistema de Tickets</h1> 
-      <a class="button1" href="../index.php?page=register">Registrarse</a>
-      <a class="button1" href="../index.php?page=login">Iniciar Sesión</a>
+      <?php if (!$usuario_logueado): ?>
+        <!-- Botones solo para usuarios no logueados -->
+        <a class="button1" href="../index.php?page=register">Registrarse</a>
+        <a class="button1" href="../index.php?page=login">Iniciar Sesión</a>
+      <?php else: ?>
+        <!-- Mensaje para usuarios logueados -->
+        <p class="bienvenida">¡Bienvenido! Aquí podrás comprar tus entradas para los eventos de MALPA CLUB.</p>
+        <a class="button1" href="../index.php?page=catalogo">Ver eventos</a>
+      <?php endif; ?>
     </div>
   </section>
 

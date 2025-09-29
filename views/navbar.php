@@ -2,6 +2,7 @@
 // Verificar si el usuario está logueado
 $usuario_logueado = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
 $es_admin = $usuario_logueado && isset($_SESSION['usuario_rol']) && $_SESSION['usuario_rol'] == 1;
+$es_reception = $usuario_logueado && isset($_SESSION['usuario_rol']) && $_SESSION['usuario_rol'] == 3;
 $nombre_usuario = $usuario_logueado ? $_SESSION['usuario_nombre'] : '';
 ?>
 
@@ -24,6 +25,9 @@ $nombre_usuario = $usuario_logueado ? $_SESSION['usuario_nombre'] : '';
                 <?php if ($es_admin): ?>
                     <li><a href="../index.php?page=admin">Panel Admin</a></li>
                     <li><a href="../index.php?page=admin-eventos">Gestionar Eventos</a></li>
+                <?php elseif ($es_reception): ?>
+                    <!-- Opciones específicas para recepcionista -->
+                    <li><a href="../index.php?page=reception">Panel Recepción</a></li>
                 <?php endif; ?>
                 <li><a href="../index.php?page=home#container-ubicacion">Ubicación</a></li>
                 <li><a href="../index.php?page=home#container-contacto">Contacto</a></li>
