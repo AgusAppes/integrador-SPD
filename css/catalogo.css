@@ -5,6 +5,7 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+    margin-top: 3rem;
 }
 
 /* Header del catálogo */
@@ -258,16 +259,21 @@
     margin: 0 0 15px 0;
 }
 
+/* Contenedor de detalles del evento */
+.event-details {
+    width: 100%;
+    display: block;
+}
+
 /* Información del evento */
 .event-date, .event-capacity {
     color: #ffffff;
     font-size: 1rem;
     font-weight: 500;
     margin: 8px 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: block;
     text-align: center;
+    width: 100%;
 }
 
 .event-date strong, .event-capacity strong {

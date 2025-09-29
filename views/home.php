@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema Tickets</title>
     <link rel="stylesheet" type="text/css" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/toast.css">
 </head>
 <body>
+  <!-- Container para notificaciones toast -->
+  <div id="toast-container" class="toast-container"></div>
+  
   <!-- include navbar -->
   <?php include 'navbar.php'; ?>
 
@@ -15,6 +19,7 @@
     <div class="container"> 
       <h1 class="h1">Sistema de Tickets</h1> 
       <a class="button1" href="../index.php?page=register">Registrarse</a>
+      <a class="button1" href="../index.php?page=login">Iniciar Sesión</a>
     </div>
   </section>
 
@@ -38,6 +43,19 @@
   </main>
   <script src="../js/carrusel.js"></script>
   <script src="../js/animacion-eventos.js"></script>
+  <script src="../js/toast.js"></script>
+  
+  <script>
+    // Mostrar mensaje de logout exitoso si existe
+    <?php if (isset($_GET['logout_exitoso']) && $_GET['logout_exitoso'] == '1'): ?>
+        showToast('<?php echo isset($_GET['message']) ? htmlspecialchars($_GET['message']) : 'Sesión cerrada correctamente'; ?>', 'success');
+    <?php endif; ?>
+    
+    // Mostrar mensaje de error si existe
+    <?php if (isset($_GET['error'])): ?>
+        showToast('<?php echo htmlspecialchars($_GET['error']); ?>', 'error');
+    <?php endif; ?>
+  </script>
   <!-- SECTION UBICACION -->
 <div id="container-ubicacion" class="container-ubicacion">
   <div class="texto-ubicacion">

@@ -6,6 +6,13 @@
   text-align: center;
 }
 
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   margin: 0;
   background-color: #000000; /* fondo general de la página */
@@ -20,7 +27,7 @@ body {
 /* Hero con la imagen */
 .herosection {
   height: 100vh; /* ocupa toda la altura de la ventana */
-  background-image: url("../img/foto-boliche.jpeg");
+  background-image: url("../img/malpa1.png");
   background-size: cover;
   background-position: center;
   position: relative;
@@ -90,6 +97,30 @@ nav ul li a:hover {
   color: #FF00FF; 
 }
 
+/* Estilos específicos para elementos de sesión en navbar */
+.user-info span {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 400;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  backdrop-filter: blur(5px);
+}
+
+.logout-link {
+  color: #ff6b6b !important;
+  font-weight: 600 !important;
+}
+
+.logout-link:hover {
+  color: #ff5252 !important;
+  background: rgba(255, 107, 107, 0.1);
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
 /* Contenedor dentro del hero */
 
 .hero .container {
@@ -99,22 +130,75 @@ nav ul li a:hover {
 
 /* Botón */
 .button1 {
-  width: 140px;
+  min-width: 160px;
   display: inline-block;
   text-decoration: none;
-  background: transparent;
-  border: 2px solid white;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.8);
   color: white;
-  padding: 10px 20px;
+  padding: 12px 24px;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 6px;
   transition: all 0.3s ease;
+  margin: 0 8px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .button1:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.25);
   color: #fff;
-  transform: translateY(-5px); /* movimiento sutil al hover */
+  border-color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* Estilos para evitar scroll horizontal */
+.container-ubicacion {
+  max-width: 100%;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.mapa-ubicacion iframe {
+  width: 100%;
+  max-width: 500px;
+  height: 300px;
+  border: 0;
+}
+
+.container-eventos {
+  max-width: 100%;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+/* Estilos responsive para botones del home */
+@media (max-width: 768px) {
+  .button1 {
+    display: block;
+    margin: 10px auto;
+    min-width: 200px;
+    max-width: 250px;
+  }
+  
+  .container .h1 {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  .mapa-ubicacion iframe {
+    width: 100%;
+    max-width: 100%;
+    height: 250px;
+  }
+  
+  .texto-ubicacion, .texto-eventos {
+    padding: 0 10px;
+  }
 }
 .parrafo-eventos{
   color: #BA55D3;

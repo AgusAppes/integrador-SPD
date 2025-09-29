@@ -71,8 +71,12 @@ $mensaje_exito = isset($_GET['success']) ? urldecode($_GET['success']) : 'Entrad
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/catalogo.css">
     <link rel="stylesheet" href="../css/modal.css">
+    <link rel="stylesheet" href="../css/toast.css">
 </head>
 <body>
+    <!-- Container para notificaciones toast -->
+    <div id="toast-container" class="toast-container"></div>
+    
     <!-- include navbar -->
     <?php include 'navbar.php'; ?>
     
@@ -166,7 +170,7 @@ $mensaje_exito = isset($_GET['success']) ? urldecode($_GET['success']) : 'Entrad
             
             <div class="modal-footer">
                 <a href="?page=catalogo" class="btn btn-danger">Cancelar</a>
-                <a href="../methods/events.php?action=comprar&id_evento=<?php echo $evento_compra ? $evento_compra['id'] : ''; ?>" class="btn btn-primary">Comprar</a>
+                <a href="../methods/sales.php?action=comprar&id_evento=<?php echo $evento_compra ? $evento_compra['id'] : ''; ?>" class="btn btn-primary">Comprar</a>
             </div>
         </div>
     </div>
@@ -204,5 +208,18 @@ $mensaje_exito = isset($_GET['success']) ? urldecode($_GET['success']) : 'Entrad
 
     <!-- Scripts -->
     <script src="../js/modal.js"></script>
+    <script src="../js/toast.js"></script>
+    
+    <script>
+        // Mostrar mensaje de éxito de login si existe
+        <?php if (isset($_GET['login_exitoso']) && $_GET['login_exitoso'] == '1'): ?>
+            showToast('¡Bienvenido! Has iniciado sesión correctamente.', 'success');
+        <?php endif; ?>
+        
+        // Mostrar mensaje de error si existe
+        <?php if (isset($_GET['error'])): ?>
+            showToast('<?php echo htmlspecialchars($_GET['error']); ?>', 'error');
+        <?php endif; ?>
+    </script>
 </body>
 </html>

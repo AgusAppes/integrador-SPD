@@ -129,5 +129,15 @@
     <!-- Animaciones y funciones de los modales -->
     <script src="../js/modal.js"></script>
     
+    <script>
+        // Mostrar mensaje de éxito de login si existe y si es admin
+        <?php if (isset($_GET['login_exitoso']) && $_GET['login_exitoso'] == '1' && $_SESSION['rol'] == 1): ?>
+            showToast('¡Bienvenido Admin! Has iniciado sesión correctamente.', 'success');
+        <?php endif; ?>
+        <?php if (isset($_GET['login_exitoso']) && $_GET['login_exitoso'] == '1' && $_SESSION['rol'] == 2): ?>
+            showToast('¡Bienvenido! Has iniciado sesión correctamente.', 'success');
+        <?php endif; ?>
+    </script>
+    
 </body>
 </html>
