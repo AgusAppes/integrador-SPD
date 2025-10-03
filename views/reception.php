@@ -164,6 +164,7 @@
         document.getElementById('start-reception').addEventListener('click', function() {
             if (currentEvent) {
                 initializeReceptionPanel();
+                focusScannerInput();
             }
         });
 
@@ -320,11 +321,6 @@
             }, 100);
         }
 
-        // Llamar focus cuando arranque la recepción
-        document.getElementById('start-reception').addEventListener('click', () => {
-            initializeReceptionPanel();
-            focusScannerInput();
-        });
 
         // Manejo cuando el scanner envía Enter (lo normal)
         scannerInput.addEventListener('keydown', function(e) {
