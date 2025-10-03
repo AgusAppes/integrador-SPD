@@ -3,7 +3,7 @@
 require_once __DIR__ . '/../config/database.php';
 
 // Función para procesar el escaneo de DNI
-function processDNIScan($dniData) {
+function processDNIScan($dniData, $eventId = null) {
     try {
         $pdo = db_connection();
         
@@ -21,23 +21,36 @@ function processDNIScan($dniData) {
         $existingUser = findUserByDNI($dni);
         
         if ($existingUser) {
-            // Usuario existe, devolver información
+            // Usuario existe, verificar entrada si se proporciona eventId
+            $ticketInfo = null;
+            if ($eventId) {
+                $ticketInfo = checkUserTicketForEvent($existingUser['id'], $eventId);
+            }
+            
             return [
                 'success' => true,
                 'message' => 'Usuario encontrado',
                 'user' => $existingUser,
-                'action' => 'found'
+                'action' => 'found',
+                'ticket' => $ticketInfo
             ];
         } else {
             // Usuario no existe, crear uno nuevo
             $newUser = createUserFromDNI($dni, $dniData);
             
             if ($newUser) {
+                // Verificar entrada para el nuevo usuario si se proporciona eventId
+                $ticketInfo = null;
+                if ($eventId) {
+                    $ticketInfo = checkUserTicketForEvent($newUser['id'], $eventId);
+                }
+                
                 return [
                     'success' => true,
                     'message' => 'Usuario creado exitosamente',
                     'user' => $newUser,
-                    'action' => 'created'
+                    'action' => 'created',
+                    'ticket' => $ticketInfo
                 ];
             } else {
                 return [
@@ -204,6 +217,63 @@ function extractUserDataFromBarcode($barcodeData) {
     return $userData;
 }
 
+// Función para verificar si el usuario tiene entrada válida para el evento
+function checkUserTicketForEvent($userId, $eventId) {
+    try {
+        $pdo = db_connection();
+        
+        // Buscar cualquier entrada del usuario para el evento (cualquier estado)
+        $stmt = $pdo->prepare("
+            SELECT 
+                e.id,
+                e.nro_serie,
+                e.precio,
+                e.id_estado,
+                es.nombre as estado_nombre,
+                te.nombre as tipo_entrada_nombre,
+                ev.nombre as evento_nombre
+            FROM entradas e
+            INNER JOIN estados es ON e.id_estado = es.id
+            INNER JOIN tipo_entrada te ON e.id_tipo_entrada = te.id
+            INNER JOIN eventos ev ON e.id_evento = ev.id
+            WHERE e.id_usuario = ? 
+            AND e.id_evento = ?
+            ORDER BY e.id DESC
+            LIMIT 1
+        ");
+        
+        $stmt->execute([$userId, $eventId]);
+        $ticket = $stmt->fetch();
+        
+        if ($ticket) {
+            // Determinar si la entrada es válida según el estado
+            $isValid = ($ticket['id_estado'] == 1); // Solo vendida (1) es válida para ingreso
+            
+            return [
+                'has_ticket' => $isValid,
+                'ticket' => $ticket,
+                'message' => $isValid ? 'Entrada válida encontrada' : 'Entrada encontrada (Estado: ' . $ticket['estado_nombre'] . ')',
+                'ticket_state' => $ticket['id_estado']
+            ];
+        } else {
+            return [
+                'has_ticket' => false,
+                'ticket' => null,
+                'message' => 'No tiene entrada para este evento',
+                'ticket_state' => null
+            ];
+        }
+        
+    } catch (Exception $e) {
+        error_log("Error en checkUserTicketForEvent: " . $e->getMessage());
+        return [
+            'has_ticket' => false,
+            'ticket' => null,
+            'message' => 'Error al verificar entrada'
+        ];
+    }
+}
+
 // Manejar peticiones AJAX
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
@@ -213,7 +283,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if (isset($input['action']) && $input['action'] === 'scan_dni') {
             $dniData = $input['dni_data'] ?? '';
-            $result = processDNIScan($dniData);
+            $eventId = $input['event_id'] ?? null;
+            $result = processDNIScan($dniData, $eventId);
             echo json_encode($result);
             exit;
         }

@@ -73,13 +73,6 @@
                 <section class="scanner-panel">
                     <div class="scanner-card">
                         <h2>📱 Escáner de DNI</h2>
-                        
-                        <!-- Estado del escáner -->
-                        <div class="scanner-status" id="scanner-status">
-                           
-                            <span class="status-text">LISTO PARA ESCANEAR</span>
-                        </div>
-
                         <!-- Campo para capturar escáner -->
                         <input 
                             type="text" 
@@ -88,11 +81,6 @@
                             placeholder="🔍 Esperando código de barras..."
                             autocomplete="off"
                         >
-                        
-                        <!-- Botón de prueba temporal -->
-                        <button type="button" id="test-connection" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin: 10px 0; cursor: pointer;">
-                            Probar Conexión
-                        </button>
                         
                         <!-- Resultado de la verificación -->
                         <div class="verification-result" id="verification-result" style="display: none;">
@@ -386,7 +374,11 @@
         // Función para procesar DNI con el backend
         async function processDNIWithBackend(dniData) {
             try {
-                console.log('Enviando datos al backend:', { action: 'scan_dni', dni_data: dniData });
+                console.log('Enviando datos al backend:', { 
+                    action: 'scan_dni', 
+                    dni_data: dniData,
+                    event_id: currentEvent ? currentEvent.id : null
+                });
                 
                 const response = await fetch('../methods/reception.php', {
                     method: 'POST',
@@ -395,7 +387,8 @@
                     },
                     body: JSON.stringify({
                         action: 'scan_dni',
-                        dni_data: dniData
+                        dni_data: dniData,
+                        event_id: currentEvent ? currentEvent.id : null
                     })
                 });
 
@@ -423,19 +416,93 @@
         function displayBackendResult(result) {
             const user = result.user;
             const action = result.action;
+            const ticket = result.ticket;
             
             let statusClass = action === 'found' ? 'success' : 'created';
             let statusText = action === 'found' ? 'Usuario Encontrado' : 'Usuario Creado';
             
+            // Determinar el estado de la entrada y botones a mostrar
+            let ticketStatus = '';
+            let ticketClass = '';
+            let showRegisterButton = false;
+            let showSellButton = false;
+            let showExitButton = false;
+            let ticketState = ticket ? ticket.ticket_state : null;
+            
+            if (ticket) {
+                if (ticket.has_ticket) {
+                    // Estado 1: Vendida - puede ingresar
+                    ticketStatus = '✅ ENTRADA VÁLIDA';
+                    ticketClass = 'ticket-valid';
+                    showRegisterButton = true;
+                } else {
+                    // Otros estados
+                    if (ticketState === 2) {
+                        // Estado 2: Cancelada - puede vender
+                        ticketStatus = '❌ ENTRADA CANCELADA';
+                        ticketClass = 'ticket-invalid';
+                        showSellButton = true;
+                    } else if (ticketState === 3) {
+                        // Estado 3: Consumida - está dentro, puede salir
+                        ticketStatus = '🟢 CLIENTE DENTRO';
+                        ticketClass = 'ticket-consumed';
+                        showExitButton = true;
+                    } else {
+                        // Otros estados
+                        ticketStatus = '❌ ' + ticket.message;
+                        ticketClass = 'ticket-invalid';
+                        showSellButton = true; // Puede vender entrada si tiene estado inválido
+                    }
+                }
+            } else {
+                ticketStatus = '⚠️ NO SE VERIFICÓ ENTRADA';
+                ticketClass = 'ticket-unchecked';
+                showSellButton = true; // Puede vender entrada si no tiene ninguna
+            }
+            
             verificationResult.innerHTML = `
                 <div class="verification-card ${statusClass}">
-                    <div class="status-header">
-                        <strong>${statusText}</strong>
+                    <div class="ticket-status ${ticketClass}">
+                        <strong>${ticketStatus}</strong>
                     </div>
-                    <div><strong>DNI:</strong> ${user.dni}</div>
-                    <div><strong>Nombre:</strong> ${user.nombre} ${user.apellido}</div>
-                    <div><strong>Email:</strong> ${user.correo}</div>
-                    <div><strong>Rol:</strong> ${user.id_rol}</div>
+                    <div class="verification-content">
+                        <div class="verification-column">
+                            <div class="info-section">
+                                <div><strong>DNI:</strong> ${user.dni}</div>
+                                <div><strong>Nombre:</strong> ${user.nombre} ${user.apellido}</div>
+                            </div>
+                        </div>
+                        <div class="verification-column">
+                            <div class="info-section">
+                                ${ticket && ticket.ticket ? `
+                                    <div class="ticket-details">
+                                        <div><strong>Serie:</strong> ${ticket.ticket.nro_serie}</div>
+                                        <div><strong>Precio:</strong> $${ticket.ticket.precio}</div>
+                                        <div><strong>Tipo:</strong> ${ticket.ticket.tipo_entrada_nombre}</div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    ${showRegisterButton || showSellButton || showExitButton ? `
+                        <div class="action-buttons">
+                            ${showRegisterButton ? `
+                                <button type="button" class="btn-register-ingress" onclick="registerIngress('${user.id}', '${ticket && ticket.ticket ? ticket.ticket.id : ''}')">
+                                    ➡️ REGISTRAR INGRESO
+                                </button>
+                            ` : ''}
+                            ${showSellButton ? `
+                                <button type="button" class="btn-sell-ticket" onclick="sellTicket('${user.id}', '${ticket && ticket.ticket ? ticket.ticket.id : ''}')">
+                                    VENDER ENTRADA
+                                </button>
+                            ` : ''}
+                            ${showExitButton ? `
+                                <button type="button" class="btn-register-exit" onclick="registerExit('${user.id}', '${ticket && ticket.ticket ? ticket.ticket.id : ''}')">
+                                    ⬅️ REGISTRAR SALIDA
+                                </button>
+                            ` : ''}
+                        </div>
+                    ` : ''}
                 </div>
             `;
         }
@@ -447,6 +514,41 @@
                     <strong>Error:</strong> ${message}
                 </div>
             `;
+        }
+
+        // Función para registrar ingreso
+        function registerIngress(userId, ticketId) {
+            console.log('Registrando ingreso para usuario:', userId, 'entrada:', ticketId);
+            
+            // Por ahora solo mostramos un mensaje
+            showToast('Función de registrar ingreso - Pendiente de implementar', 'info');
+            
+            // TODO: Implementar lógica para cambiar estado de entrada a "consumida" (3)
+        }
+
+        // Función para vender entrada
+        function sellTicket(userId, ticketId) {
+            console.log('Vendiendo entrada para usuario:', userId, 'entrada:', ticketId);
+            
+            if (ticketId && ticketId !== '') {
+                // Tiene entrada existente - cambiar estado a vendida
+                showToast('Reactivando entrada existente - Pendiente de implementar', 'info');
+                // TODO: Implementar lógica para cambiar estado de entrada a "vendida" (1)
+            } else {
+                // No tiene entrada - crear nueva venta
+                showToast('Vendiendo nueva entrada - Pendiente de implementar', 'info');
+                // TODO: Implementar lógica para crear nueva entrada con estado "vendida" (1)
+            }
+        }
+
+        // Función para registrar salida
+        function registerExit(userId, ticketId) {
+            console.log('Registrando salida para usuario:', userId, 'entrada:', ticketId);
+            
+            // Por ahora solo mostramos un mensaje
+            showToast('Función de registrar salida - Pendiente de implementar', 'info');
+            
+            // TODO: Implementar lógica para cambiar estado de entrada a "vendida" (1) o "cancelada" (2)
         }
 
         // Helper para evitar XSS si muestras raw

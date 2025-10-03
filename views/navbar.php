@@ -14,7 +14,7 @@ $nombre_usuario = $usuario_logueado ? $_SESSION['usuario_nombre'] : '';
     <nav>
         <ul>
             <li><a href="../index.php?page=home">Inicio</a></li>
-            <li><a href="../index.php?page=catalogo">Eventos</a></li>
+            
             
             <?php if (!$usuario_logueado): ?>
                 <!-- Opciones para usuarios no logueados -->
@@ -31,6 +31,7 @@ $nombre_usuario = $usuario_logueado ? $_SESSION['usuario_nombre'] : '';
                 <?php endif; ?>
                 <li><a href="../index.php?page=home#container-ubicacion">Ubicación</a></li>
                 <li><a href="../index.php?page=home#container-contacto">Contacto</a></li>
+                <li><a href="../index.php?page=catalogo">Eventos</a></li>
                 <li><a href="../methods/users.php?action=logout" class="logout-link">Cerrar Sesión</a></li>
             <?php endif; ?>
             
