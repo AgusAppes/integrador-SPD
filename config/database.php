@@ -2,7 +2,7 @@
 // Incluir configuraciones
 require_once 'config.php';
 
-// Función para conectar a la base de datos (Patrón Singleton)
+// Función para conectar a la base de datos utilizando PDO
 function db_connection() {
     static $pdo = null;
     
@@ -21,4 +21,3 @@ function db_connection() {
     
     return $pdo;
 }
-?>

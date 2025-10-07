@@ -41,6 +41,7 @@ if (!isset($_GET['page'])) {
 
 // Si el parámetro page no está en las paginas permitidas, redirigir al home
 if (!in_array($_GET['page'], $paginas_permitidas)) {
+    //include sirve para cargar el archivo de la vista
     include 'views/home.php';
     exit;
 }

@@ -68,10 +68,10 @@ $mensaje_exito = isset($_GET['success']) ? urldecode($_GET['success']) : 'Entrad
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo de Eventos</title>
-    <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="../css/catalogo.css">
-    <link rel="stylesheet" href="../css/modal.css">
-    <link rel="stylesheet" href="../css/toast.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/styles.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/catalogo.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/modal.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/toast.css">
 </head>
 <body>
     <!-- Container para notificaciones toast -->
@@ -86,10 +86,10 @@ $mensaje_exito = isset($_GET['success']) ? urldecode($_GET['success']) : 'Entrad
                 <div class="events-grid">
                     <?php foreach ($eventos as $evento): ?>
                         <div class="event-card">
-                            <a href="../index.php?page=catalogo&comprar=<?php echo $evento['id']; ?>" class="event-image-link">
+                            <a href="<?php echo BASE_URL; ?>index.php?page=catalogo&comprar=<?php echo $evento['id']; ?>" class="event-image-link">
                                 <div class="event-image">
                                     <?php 
-                                    $imagen_src = !empty($evento['banner']) ? '../' . htmlspecialchars($evento['banner']) : '../img/malpa.png';
+                                    $imagen_src = !empty($evento['banner']) ? BASE_URL . htmlspecialchars($evento['banner']) : BASE_URL . 'img/malpa.png';
                                     ?>
                                     <img src="<?php echo $imagen_src; ?>" alt="<?php echo htmlspecialchars($evento['nombre']); ?>">
                                     <div class="event-title-overlay">
@@ -139,7 +139,7 @@ $mensaje_exito = isset($_GET['success']) ? urldecode($_GET['success']) : 'Entrad
                 <div class="no-events-container">
                     <div class="event-card no-events-card">
                         <div class="event-image">
-                            <img src="../img/malpa.png" alt="No hay eventos">
+                            <img src="<?php echo BASE_URL; ?>img/malpa.png" alt="No hay eventos">
                             <div class="event-title-overlay">
                                 <h3 class="event-title">No hay eventos próximos</h3>
                             </div>
@@ -170,7 +170,7 @@ $mensaje_exito = isset($_GET['success']) ? urldecode($_GET['success']) : 'Entrad
             
             <div class="modal-footer">
                 <a href="?page=catalogo" class="btn btn-danger">Cancelar</a>
-                <a href="../methods/sales.php?action=comprar&id_evento=<?php echo $evento_compra ? $evento_compra['id'] : ''; ?>" class="btn btn-primary">Comprar</a>
+                <a href="<?php echo BASE_URL; ?>methods/sales.php?action=comprar&id_evento=<?php echo $evento_compra ? $evento_compra['id'] : ''; ?>" class="btn btn-primary">Comprar</a>
             </div>
         </div>
     </div>
@@ -207,8 +207,8 @@ $mensaje_exito = isset($_GET['success']) ? urldecode($_GET['success']) : 'Entrad
     </div>
 
     <!-- Scripts -->
-    <script src="../js/modal.js"></script>
-    <script src="../js/toast.js"></script>
+    <script src="<?php echo BASE_URL; ?>js/modal.js"></script>
+    <script src="<?php echo BASE_URL; ?>js/toast.js"></script>
     
     <script>
         // Mostrar mensaje de éxito de login si existe

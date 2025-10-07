@@ -458,9 +458,9 @@ if ($_POST && !isset($_POST['action'])) {
     $resultado = crear_evento($_POST);
     
     if ($resultado['success']) {
-        header('Location: ../index.php?page=admin&success=' . urlencode($resultado['message']));
+        header('Location: ' . BASE_URL . 'index.php?page=admin&success=' . urlencode($resultado['message']));
     } else {
-        header('Location: ../index.php?page=admin&error=' . urlencode($resultado['message']));
+        header('Location: ' . BASE_URL . 'index.php?page=admin&error=' . urlencode($resultado['message']));
     }
     exit;
 }
@@ -470,9 +470,9 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'update') {
     $resultado = actualizar_evento($_POST);
     
     if ($resultado['success']) {
-        header('Location: ../index.php?page=admin-eventos&success=' . urlencode($resultado['message']));
+        header('Location: ' . BASE_URL . 'index.php?page=admin-eventos&success=' . urlencode($resultado['message']));
     } else {
-        header('Location: ../index.php?page=admin-eventos&error=' . urlencode($resultado['message']));
+        header('Location: ' . BASE_URL . 'index.php?page=admin-eventos&error=' . urlencode($resultado['message']));
     }
     exit;
 }
@@ -527,9 +527,9 @@ if ($_GET && isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_G
     $resultado = eliminar_evento($_GET['id']);
     
     if ($resultado['success']) {
-        header('Location: ../index.php?page=admin-eventos&success=' . urlencode($resultado['message']));
+        header('Location: ' . BASE_URL . 'index.php?page=admin-eventos&success=' . urlencode($resultado['message']));
     } else {
-        header('Location: ../index.php?page=admin-eventos&error=' . urlencode($resultado['message']));
+        header('Location: ' . BASE_URL . 'index.php?page=admin-eventos&error=' . urlencode($resultado['message']));
     }
     exit;
 }

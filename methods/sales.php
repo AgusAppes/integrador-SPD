@@ -132,13 +132,13 @@ if ($_GET && isset($_GET['action']) && $_GET['action'] === 'comprar' && isset($_
     $resultado = procesar_compra_anticipada($_GET['id_evento']);
     
     if ($resultado['success']) {
-        header('Location: ../index.php?page=catalogo&compra_exitosa=1&nro_serie=' . urlencode($resultado['data']['nro_serie']) . '&success=' . urlencode($resultado['message']));
+        header('Location: ' . BASE_URL . 'index.php?page=catalogo&compra_exitosa=1&nro_serie=' . urlencode($resultado['data']['nro_serie']) . '&success=' . urlencode($resultado['message']));
     } else {
         // Si el error es por falta de sesión, redirigir al login
         if (strpos($resultado['message'], 'iniciar sesión') !== false) {
-            header('Location: ../index.php?page=login&error=' . urlencode($resultado['message']));
+            header('Location: ' . BASE_URL . 'index.php?page=login&error=' . urlencode($resultado['message']));
         } else {
-            header('Location: ../index.php?page=catalogo&error=' . urlencode($resultado['message']));
+            header('Location: ' . BASE_URL . 'index.php?page=catalogo&error=' . urlencode($resultado['message']));
         }
     }
     exit;

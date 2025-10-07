@@ -274,6 +274,192 @@ function checkUserTicketForEvent($userId, $eventId) {
     }
 }
 
+// Función para registrar ingreso
+function registerEntry($userId, $ticketId, $eventId) {
+    try {
+        $pdo = db_connection();
+        
+        // Verificar si la persona ya está dentro (tiene hora_ingreso pero no hora_egreso)
+        $stmt = $pdo->prepare("
+            SELECT da.id 
+            FROM detalle_asistencias da
+            INNER JOIN entradas e ON da.id_entrada = e.id
+            WHERE e.id_usuario = ? 
+            AND e.id_evento = ? 
+            AND da.hora_ingreso IS NOT NULL 
+            AND da.hora_egreso IS NULL
+        ");
+        
+        $stmt->execute([$userId, $eventId]);
+        $existingEntry = $stmt->fetch();
+        
+        if ($existingEntry) {
+            return [
+                'success' => false,
+                'message' => 'La persona ya está dentro del local'
+            ];
+        }
+        
+        // Verificar capacidad del evento
+        $capacityResult = checkEventCapacity($eventId);
+        if (!$capacityResult['success']) {
+            return $capacityResult;
+        }
+        
+        if ($capacityResult['current_capacity'] >= $capacityResult['max_capacity']) {
+            return [
+                'success' => false,
+                'message' => 'El local está al máximo de su capacidad'
+            ];
+        }
+        
+        // Registrar el ingreso
+        $stmt = $pdo->prepare("
+            INSERT INTO detalle_asistencias (id_entrada, hora_ingreso) 
+            VALUES (?, NOW())
+        ");
+        
+        $result = $stmt->execute([$ticketId]);
+        
+        if ($result) {
+            // Actualizar estado de la entrada a "consumida" (estado 3)
+            $stmt2 = $pdo->prepare("UPDATE entradas SET id_estado = 3 WHERE id = ?");
+            $stmt2->execute([$ticketId]);
+            
+            // Obtener capacidad actualizada
+            $updatedCapacity = checkEventCapacity($eventId);
+            
+            return [
+                'success' => true,
+                'message' => 'Ingreso registrado exitosamente',
+                'capacity' => $updatedCapacity
+            ];
+        }
+        
+        return [
+            'success' => false,
+            'message' => 'Error al registrar el ingreso'
+        ];
+        
+    } catch (Exception $e) {
+        error_log("Error en registerEntry: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error interno del servidor'
+        ];
+    }
+}
+
+// Función para registrar egreso
+function registerExit($userId, $ticketId, $eventId) {
+    try {
+        $pdo = db_connection();
+        
+        // Buscar el registro de ingreso activo (con hora_ingreso pero sin hora_egreso)
+        $stmt = $pdo->prepare("
+            SELECT da.id 
+            FROM detalle_asistencias da
+            INNER JOIN entradas e ON da.id_entrada = e.id
+            WHERE e.id_usuario = ? 
+            AND e.id_evento = ? 
+            AND da.hora_ingreso IS NOT NULL 
+            AND da.hora_egreso IS NULL
+        ");
+        
+        $stmt->execute([$userId, $eventId]);
+        $activeEntry = $stmt->fetch();
+        
+        if (!$activeEntry) {
+            return [
+                'success' => false,
+                'message' => 'La persona no está registrada como dentro del local'
+            ];
+        }
+        
+        // Registrar el egreso
+        $stmt = $pdo->prepare("
+            UPDATE detalle_asistencias 
+            SET hora_egreso = NOW() 
+            WHERE id = ?
+        ");
+        
+        $result = $stmt->execute([$activeEntry['id']]);
+        
+        if ($result) {
+            // Actualizar estado de la entrada a "vendida" (estado 1) para permitir reingreso
+            $stmt2 = $pdo->prepare("UPDATE entradas SET id_estado = 1 WHERE id = ?");
+            $stmt2->execute([$ticketId]);
+            
+            // Obtener capacidad actualizada
+            $updatedCapacity = checkEventCapacity($eventId);
+            
+            return [
+                'success' => true,
+                'message' => 'Egreso registrado exitosamente',
+                'capacity' => $updatedCapacity
+            ];
+        }
+        
+        return [
+            'success' => false,
+            'message' => 'Error al registrar el egreso'
+        ];
+        
+    } catch (Exception $e) {
+        error_log("Error en registerExit: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error interno del servidor'
+        ];
+    }
+}
+
+// Función para verificar capacidad del evento
+function checkEventCapacity($eventId) {
+    try {
+        $pdo = db_connection();
+        
+        // Obtener capacidad máxima del evento
+        $stmt = $pdo->prepare("SELECT cupo_total FROM eventos WHERE id = ?");
+        $stmt->execute([$eventId]);
+        $event = $stmt->fetch();
+        
+        if (!$event) {
+            return [
+                'success' => false,
+                'message' => 'Evento no encontrado'
+            ];
+        }
+        
+        // Contar personas actualmente dentro (con hora_ingreso pero sin hora_egreso)
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) as current_capacity
+            FROM detalle_asistencias da
+            INNER JOIN entradas e ON da.id_entrada = e.id
+            WHERE e.id_evento = ? 
+            AND da.hora_ingreso IS NOT NULL 
+            AND da.hora_egreso IS NULL
+        ");
+        
+        $stmt->execute([$eventId]);
+        $capacity = $stmt->fetch();
+        
+        return [
+            'success' => true,
+            'current_capacity' => (int)$capacity['current_capacity'],
+            'max_capacity' => (int)$event['cupo_total'],
+            'available_capacity' => (int)$event['cupo_total'] - (int)$capacity['current_capacity']
+        ];
+        
+    } catch (Exception $e) {
+        error_log("Error en checkEventCapacity: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error al verificar capacidad'
+        ];
+    }
+}
+
 // Manejar peticiones AJAX
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
@@ -281,12 +467,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $input = json_decode(file_get_contents('php://input'), true);
         
-        if (isset($input['action']) && $input['action'] === 'scan_dni') {
-            $dniData = $input['dni_data'] ?? '';
-            $eventId = $input['event_id'] ?? null;
-            $result = processDNIScan($dniData, $eventId);
-            echo json_encode($result);
-            exit;
+        if (isset($input['action'])) {
+            switch ($input['action']) {
+                case 'scan_dni':
+                    $dniData = $input['dni_data'] ?? '';
+                    $eventId = $input['event_id'] ?? null;
+                    $result = processDNIScan($dniData, $eventId);
+                    echo json_encode($result);
+                    exit;
+                    
+                case 'register_entry':
+                    $userId = $input['user_id'] ?? null;
+                    $ticketId = $input['ticket_id'] ?? null;
+                    $eventId = $input['event_id'] ?? null;
+                    $result = registerEntry($userId, $ticketId, $eventId);
+                    echo json_encode($result);
+                    exit;
+                    
+                case 'register_exit':
+                    $userId = $input['user_id'] ?? null;
+                    $ticketId = $input['ticket_id'] ?? null;
+                    $eventId = $input['event_id'] ?? null;
+                    $result = registerExit($userId, $ticketId, $eventId);
+                    echo json_encode($result);
+                    exit;
+                    
+                case 'check_capacity':
+                    $eventId = $input['event_id'] ?? null;
+                    $result = checkEventCapacity($eventId);
+                    echo json_encode($result);
+                    exit;
+            }
         }
         
         echo json_encode([

@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Recepción - MALPA CLUB</title>
     <!-- Estilos base -->
-    <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="../css/reception.css">
-    <link rel="stylesheet" href="../css/toast.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/styles.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/reception.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/toast.css">
 </head>
 <body>
     <!-- Container para notificaciones toast -->
@@ -95,7 +95,7 @@
     </main>
 
     <!-- Scripts -->
-    <script src="../js/toast.js"></script>
+    <script src="<?php echo BASE_URL; ?>js/toast.js"></script>
     <script>
         // Variables globales
         let currentEvent = null;
@@ -199,6 +199,9 @@
             document.getElementById('selected-event-title').textContent = currentEvent.nombre;
             document.getElementById('max-capacity').textContent = currentEvent.capacidad || 0;
             
+            // Cargar capacidad inicial del evento
+            refreshCapacity();
+            
             // Guardar el evento seleccionado en localStorage
             localStorage.setItem('selectedEvent', JSON.stringify(currentEvent));
         }
@@ -238,6 +241,7 @@
             }
         }
 
+        // Función para parsear el DNI desde el código de barras
         function parseDNIBarcode(barcodeData) {
             if (!barcodeData || typeof barcodeData !== 'string') return null;
 
@@ -247,7 +251,7 @@
             // Dividir por comillas y filtrar vacíos / espacios
             const parts = normalized.split('"').map(p => p.trim()).filter(p => p !== '');
 
-            const genders = ['M', 'F', 'O']; // ampliar si hace falta
+            const genders = ['M', 'F', 'O'];
             let dni = null;
             let gender = null;  
             let name = null;
@@ -513,13 +517,46 @@
         }
 
         // Función para registrar ingreso
-        function registerIngress(userId, ticketId) {
+        async function registerIngress(userId, ticketId) {
             console.log('Registrando ingreso para usuario:', userId, 'entrada:', ticketId);
             
-            // Por ahora solo mostramos un mensaje
-            showToast('Función de registrar ingreso - Pendiente de implementar', 'info');
+            if (!currentEvent) {
+                showToast('No hay evento seleccionado', 'error');
+                return;
+            }
             
-            // TODO: Implementar lógica para cambiar estado de entrada a "consumida" (3)
+            try {
+                const response = await fetch('../methods/reception.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'register_entry',
+                        user_id: userId,
+                        ticket_id: ticketId,
+                        event_id: currentEvent.id
+                    })
+                });
+
+                const result = await response.json();
+                console.log('Resultado del registro de ingreso:', result);
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    // Actualizar capacidad en tiempo real
+                    if (result.capacity) {
+                        updateCapacityDisplay(result.capacity);
+                    }
+                    // Limpiar resultado de verificación para permitir nuevo escaneo
+                    document.getElementById('verification-result').style.display = 'none';
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error al registrar ingreso:', error);
+                showToast('Error de conexión al registrar ingreso', 'error');
+            }
         }
 
         // Función para vender entrada
@@ -538,13 +575,94 @@
         }
 
         // Función para registrar salida
-        function registerExit(userId, ticketId) {
+        async function registerExit(userId, ticketId) {
             console.log('Registrando salida para usuario:', userId, 'entrada:', ticketId);
             
-            // Por ahora solo mostramos un mensaje
-            showToast('Función de registrar salida - Pendiente de implementar', 'info');
+            if (!currentEvent) {
+                showToast('No hay evento seleccionado', 'error');
+                return;
+            }
             
-            // TODO: Implementar lógica para cambiar estado de entrada a "vendida" (1) o "cancelada" (2)
+            try {
+                const response = await fetch('../methods/reception.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'register_exit',
+                        user_id: userId,
+                        ticket_id: ticketId,
+                        event_id: currentEvent.id
+                    })
+                });
+
+                const result = await response.json();
+                console.log('Resultado del registro de salida:', result);
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    // Actualizar capacidad en tiempo real
+                    if (result.capacity) {
+                        updateCapacityDisplay(result.capacity);
+                    }
+                    // Limpiar resultado de verificación para permitir nuevo escaneo
+                    document.getElementById('verification-result').style.display = 'none';
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error al registrar salida:', error);
+                showToast('Error de conexión al registrar salida', 'error');
+            }
+        }
+
+        // Función para actualizar la visualización de capacidad
+        function updateCapacityDisplay(capacityData) {
+            if (capacityData && capacityData.success) {
+                document.getElementById('current-capacity').textContent = capacityData.current_capacity;
+                document.getElementById('max-capacity').textContent = capacityData.max_capacity;
+                
+                // Actualizar indicador de estado
+                const statusIndicator = document.querySelector('.status-indicator');
+                const statusText = document.querySelector('#capacity-status span:last-child');
+                
+                if (capacityData.current_capacity >= capacityData.max_capacity) {
+                    statusIndicator.className = 'status-indicator full';
+                    statusText.textContent = 'COMPLETO';
+                } else if (capacityData.current_capacity >= capacityData.max_capacity * 0.8) {
+                    statusIndicator.className = 'status-indicator warning';
+                    statusText.textContent = 'PRÓXIMO A COMPLETO';
+                } else {
+                    statusIndicator.className = 'status-indicator available';
+                    statusText.textContent = 'DISPONIBLE';
+                }
+            }
+        }
+
+        // Función para obtener capacidad actualizada
+        async function refreshCapacity() {
+            if (!currentEvent) return;
+            
+            try {
+                const response = await fetch('../methods/reception.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'check_capacity',
+                        event_id: currentEvent.id
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    updateCapacityDisplay(result);
+                }
+            } catch (error) {
+                console.error('Error al actualizar capacidad:', error);
+            }
         }
 
         // Helper para evitar XSS si muestras raw

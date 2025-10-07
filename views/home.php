@@ -8,8 +8,8 @@ $usuario_logueado = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === tr
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema Tickets</title>
-    <link rel="stylesheet" type="text/css" href="../css/styles.css">
-    <link rel="stylesheet" href="../css/toast.css">
+    <link rel="stylesheet" type="text/css" href="<?php echo BASE_URL; ?>css/styles.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/toast.css">
 </head>
 <body>
   <!-- Container para notificaciones toast -->
@@ -24,12 +24,12 @@ $usuario_logueado = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === tr
       <h1 class="h1">Sistema de Tickets</h1> 
       <?php if (!$usuario_logueado): ?>
         <!-- Botones solo para usuarios no logueados -->
-        <a class="button1" href="../index.php?page=register">Registrarse</a>
-        <a class="button1" href="../index.php?page=login">Iniciar Sesión</a>
+        <a class="button1" href="<?php echo BASE_URL; ?>index.php?page=register">Registrarse</a>
+        <a class="button1" href="<?php echo BASE_URL; ?>index.php?page=login">Iniciar Sesión</a>
       <?php else: ?>
         <!-- Mensaje para usuarios logueados -->
         <p class="bienvenida">¡Bienvenido! Aquí podrás comprar tus entradas para los eventos de MALPA CLUB.</p>
-        <a class="button1" href="../index.php?page=catalogo">Ver eventos</a>
+        <a class="button1" href="<?php echo BASE_URL; ?>index.php?page=catalogo">Ver eventos</a>
       <?php endif; ?>
     </div>
   </section>
@@ -44,17 +44,17 @@ $usuario_logueado = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === tr
         </p>
       </div>
       <div class="imagenes-eventos">
-        <img src="../img/FLYER1.jpg" alt="" class="active">
-        <img src="../img/flyer2.jpg" alt="" class="img2">
-        <img src="../img/flyer3.jpg" alt="" class="img3">
-        <img src="../img/flyer4.jpg" alt="" class="img4">
-       <img src="../img/flyer5.jpg" alt="" class="img5">
+        <img src="<?php echo BASE_URL; ?>img/FLYER1.jpg" alt="" class="active">
+        <img src="<?php echo BASE_URL; ?>img/flyer2.jpg" alt="" class="img2">
+        <img src="<?php echo BASE_URL; ?>img/Flyer3.jpg" alt="" class="img3">
+        <img src="<?php echo BASE_URL; ?>img/Flyer4.jpg" alt="" class="img4">
+       <img src="<?php echo BASE_URL; ?>img/Flyer5.jpg" alt="" class="img5">
       </div>
     </div>
   </main>
-  <script src="../js/carrusel.js"></script>
-  <script src="../js/animacion-eventos.js"></script>
-  <script src="../js/toast.js"></script>
+  <script src="<?php echo BASE_URL; ?>js/carrusel.js"></script>
+  <script src="<?php echo BASE_URL; ?>js/animacion-eventos.js"></script>
+  <script src="<?php echo BASE_URL; ?>js/toast.js"></script>
   
   <script>
     // Mostrar mensaje de logout exitoso si existe
@@ -83,7 +83,7 @@ $usuario_logueado = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === tr
       referrerpolicy="no-referrer-when-downgrade"></iframe>
   </div>
 </div>
-<script src="../js/animacion-ubicacion.js"></script>
+<script src="<?php echo BASE_URL; ?>js/animacion-ubicacion.js"></script>
   
   
   <footer id="container-contacto" class="footer" >

@@ -111,13 +111,13 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Gestión de Eventos</title>
     <!-- Estilos base (incluye navbar) -->
-    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/styles.css">
     <!-- Estilos del panel de administración -->
-    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/admin.css">
     <!-- Estilos de las notificaciones toast -->
-    <link rel="stylesheet" href="../css/toast.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/toast.css">
     <!-- Estilos de modales -->
-    <link rel="stylesheet" href="../css/modal.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/modal.css">
 </head>
 <body>
     <!-- Container para notificaciones toast -->
@@ -171,10 +171,10 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                                         <td><?php echo $evento['vendidas']; ?></td>
                                         <td><?php echo $cupoDisponible; ?></td>
                                         <td>
-                                            <a href="../index.php?page=admin-eventos&edit=<?php echo $evento['id']; ?>" class="btn btn-primary btn-sm">
+                                            <a href="<?php echo BASE_URL; ?>index.php?page=admin-eventos&edit=<?php echo $evento['id']; ?>" class="btn btn-primary btn-sm">
                                                 Editar
                                             </a>
-                                            <a href="../methods/events.php?action=delete&id=<?php echo $evento['id']; ?>" 
+                                            <a href="<?php echo BASE_URL; ?>methods/events.php?action=delete&id=<?php echo $evento['id']; ?>" 
                                                class="btn btn-danger btn-sm"
                                                onclick="return confirm('¿Estás seguro de que quieres eliminar este evento?')">
                                                 Eliminar
@@ -198,7 +198,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                 <button class="close" onclick="closeModal('editEventModal')">&times;</button>
             </div>
             
-            <form action="../methods/events.php" method="post" enctype="multipart/form-data" id="editEventForm" class="modal-body modal-eventos">
+            <form action="<?php echo BASE_URL; ?>methods/events.php" method="post" enctype="multipart/form-data" id="editEventForm" class="modal-body modal-eventos">
                 <input type="hidden" name="evento_id" value="<?php echo $evento_editando ? $evento_editando['id'] : ''; ?>">
                 <input type="hidden" name="action" value="update">
                 
@@ -250,7 +250,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                     <?php if ($evento_editando && $evento_editando['banner']): ?>
                         <div class="current-banner-preview">
                             <small>Imagen actual:</small>
-                            <img src="../<?php echo $evento_editando['banner']; ?>" alt="Banner actual" style="max-width: 100px; max-height: 60px; margin-top: 5px;">
+                            <img src="<?php echo BASE_URL . htmlspecialchars($evento_editando['banner']); ?>" alt="Banner actual" style="max-width: 100px; max-height: 60px; margin-top: 5px;">
                         </div>
                     <?php else: ?>
                         <div class="current-banner-preview">
@@ -268,7 +268,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
     </div>
     
     <!-- Scripts -->
-    <script src="../js/toast.js"></script>
-    <script src="../js/modal.js"></script>
+    <script src="<?php echo BASE_URL; ?>js/toast.js"></script>
+    <script src="<?php echo BASE_URL; ?>js/modal.js"></script>
 </body>
 </html>

@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Crear Evento</title>
     <!-- Estilos base (incluye navbar) -->
-    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/styles.css">
     <!-- Estilos del panel de administración -->
-    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/admin.css">
     <!-- Estilos de las notificaciones toast -->
-    <link rel="stylesheet" href="../css/toast.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/toast.css">
     <!-- Estilos de modales -->
-    <link rel="stylesheet" href="../css/modal.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/modal.css">
 </head>
 <body>
     <!-- Container para notificaciones toast -->
@@ -34,7 +34,7 @@
                 <button class="btn btn-primary" onclick="openModal('createEventModal')">
                     <i class="icon">+</i> Crear Evento
                 </button>
-                <button class="btn btn-secondary" onclick="window.location.href='../index.php?page=admin-eventos'">
+                <button class="btn btn-secondary" onclick="window.location.href='<?php echo BASE_URL; ?>index.php?page=admin-eventos'">
                     Gestionar Eventos
                 </button>
             </div>
@@ -68,7 +68,7 @@
                 <button class="close" onclick="closeModal('createEventModal')">&times;</button>
             </div>
             
-            <form action="../methods/events.php" method="post" enctype="multipart/form-data" id="eventoForm" class="modal-body modal-eventos">
+            <form action="<?php echo BASE_URL; ?>methods/events.php" method="post" enctype="multipart/form-data" id="eventoForm" class="modal-body modal-eventos">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="nombre">Nombre del Evento <span class="required">*</span></label>
@@ -125,9 +125,9 @@
     </div>
     
     <!-- Animaciones y funciones de las notificaciones toast -->
-    <script src="../js/toast.js"></script>
+    <script src="<?php echo BASE_URL; ?>js/toast.js"></script>
     <!-- Animaciones y funciones de los modales -->
-    <script src="../js/modal.js"></script>
+    <script src="<?php echo BASE_URL; ?>js/modal.js"></script>
     
     <script>
         // Mostrar mensaje de éxito de login si existe y si es admin

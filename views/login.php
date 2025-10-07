@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - Sistema Ticket</title>
     <!-- Estilos base -->
-    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/styles.css">
     <!-- Estilos de admin para formularios -->
-    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/admin.css">
     <!-- Estilos de toast para notificaciones -->
-    <link rel="stylesheet" href="../css/toast.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/toast.css">
     <!-- Estilos de usuarios -->
-    <link rel="stylesheet" href="../css/users.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/users.css">
 </head>
 <body>
     <!-- Container para notificaciones toast -->
@@ -29,7 +29,7 @@
             </p>
             
             <!-- Formulario de login -->
-            <form action="../methods/users.php" method="post" class="login-form">
+            <form action="<?php echo BASE_URL; ?>methods/users.php" method="post" class="login-form">
                 <input type="hidden" name="action" value="login">
                 
                 <div class="form-group">
@@ -69,7 +69,7 @@
     </div>
 
     <!-- Scripts -->
-    <script src="../js/toast.js"></script>
+    <script src="<?php echo BASE_URL; ?>js/toast.js"></script>
     
     <script>
         // Mostrar mensaje de éxito de registro si existe

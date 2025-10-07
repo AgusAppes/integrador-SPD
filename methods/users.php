@@ -273,13 +273,13 @@ if ($_POST) {
             // Redirigir según el rol del usuario
             if ($resultado['data']['rol'] == 1) {
                 // Admin - redirigir al panel de administración
-                header('Location: ../index.php?page=admin&login_exitoso=1');
+                header('Location: ' . BASE_URL . 'index.php?page=admin&login_exitoso=1');
             } else {
                 // Cliente - redirigir al catálogo
-                header('Location: ../index.php?page=catalogo&login_exitoso=1');
+                header('Location: ' . BASE_URL . 'index.php?page=catalogo&login_exitoso=1');
             }
         } else {
-            header('Location: ../index.php?page=login&error=' . urlencode($resultado['message']));
+            header('Location: ' . BASE_URL . 'index.php?page=login&error=' . urlencode($resultado['message']));
         }
         exit;
     } else {
@@ -287,9 +287,9 @@ if ($_POST) {
         $resultado = crear_usuario($_POST);
         
         if ($resultado['success']) {
-            header('Location: ../index.php?page=login&registro_exitoso=1&message=' . urlencode($resultado['message']));
+            header('Location: ' . BASE_URL . 'index.php?page=login&registro_exitoso=1&message=' . urlencode($resultado['message']));
         } else {
-            header('Location: ../index.php?page=register&error=' . urlencode($resultado['message']));
+            header('Location: ' . BASE_URL . 'index.php?page=register&error=' . urlencode($resultado['message']));
         }
         exit;
     }
@@ -300,9 +300,9 @@ if ($_GET && isset($_GET['action']) && $_GET['action'] === 'logout') {
     $resultado = cerrar_sesion();
     
     if ($resultado['success']) {
-        header('Location: ../index.php?page=home&logout_exitoso=1&message=' . urlencode($resultado['message']));
+        header('Location: ' . BASE_URL . 'index.php?page=home&logout_exitoso=1&message=' . urlencode($resultado['message']));
     } else {
-        header('Location: ../index.php?page=home&error=' . urlencode($resultado['message']));
+        header('Location: ' . BASE_URL . 'index.php?page=home&error=' . urlencode($resultado['message']));
     }
     exit;
 }

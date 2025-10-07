@@ -8,31 +8,31 @@ $nombre_usuario = $usuario_logueado ? $_SESSION['usuario_nombre'] : '';
 
 <!-- Barra de navegación -->
 <header>
-    <a href="../index.php?page=home">
-        <img src="../img/malpa-logo.png" alt="malpa eventos">
+    <a href="<?php echo BASE_URL; ?>index.php?page=home">
+        <img src="<?php echo BASE_URL; ?>img/malpa-logo.png" alt="malpa eventos">
     </a>
     <nav>
         <ul>
-            <li><a href="../index.php?page=home">Inicio</a></li>
+            <li><a href="<?php echo BASE_URL; ?>index.php?page=home">Inicio</a></li>
             
             
             <?php if (!$usuario_logueado): ?>
                 <!-- Opciones para usuarios no logueados -->
-                <li><a href="../index.php?page=home#container-ubicacion">Ubicación</a></li>
-                <li><a href="../index.php?page=home#container-contacto">Contacto</a></li>
+                <li><a href="<?php echo BASE_URL; ?>index.php?page=home#container-ubicacion">Ubicación</a></li>
+                <li><a href="<?php echo BASE_URL; ?>index.php?page=home#container-contacto">Contacto</a></li>
             <?php else: ?>
                 <!-- Opciones para usuarios logueados -->
                 <?php if ($es_admin): ?>
-                    <li><a href="../index.php?page=admin">Panel Admin</a></li>
-                    <li><a href="../index.php?page=admin-eventos">Gestionar Eventos</a></li>
+                    <li><a href="<?php echo BASE_URL; ?>index.php?page=admin">Panel Admin</a></li>
+                    <li><a href="<?php echo BASE_URL; ?>index.php?page=admin-eventos">Gestionar Eventos</a></li>
                 <?php elseif ($es_reception): ?>
                     <!-- Opciones específicas para recepcionista -->
-                    <li><a href="../index.php?page=reception">Panel Recepción</a></li>
+                    <li><a href="<?php echo BASE_URL; ?>index.php?page=reception">Panel Recepción</a></li>
                 <?php endif; ?>
-                <li><a href="../index.php?page=home#container-ubicacion">Ubicación</a></li>
-                <li><a href="../index.php?page=home#container-contacto">Contacto</a></li>
-                <li><a href="../index.php?page=catalogo">Eventos</a></li>
-                <li><a href="../methods/users.php?action=logout" class="logout-link">Cerrar Sesión</a></li>
+                <li><a href="<?php echo BASE_URL; ?>index.php?page=home#container-ubicacion">Ubicación</a></li>
+                <li><a href="<?php echo BASE_URL; ?>index.php?page=home#container-contacto">Contacto</a></li>
+                <li><a href="<?php echo BASE_URL; ?>index.php?page=catalogo">Eventos</a></li>
+                <li><a href="<?php echo BASE_URL; ?>methods/users.php?action=logout" class="logout-link">Cerrar Sesión</a></li>
             <?php endif; ?>
             
         </ul>
