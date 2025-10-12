@@ -1,5 +1,6 @@
 <?php
-//configuración de base de datos
+//configuración de base de datos y constantes
+require_once '../config/config.php';
 require_once '../config/database.php';
 
 

@@ -97,6 +97,9 @@
     <!-- Scripts -->
     <script src="<?php echo BASE_URL; ?>js/toast.js"></script>
     <script>
+        // URL base para peticiones fetch
+        const BASE_URL = '<?php echo BASE_URL; ?>';
+        
         // Variables globales
         let currentEvent = null;
         let events = [];
@@ -109,7 +112,7 @@
         // Cargar eventos disponibles
         async function loadEvents() {
             try {
-                const response = await fetch('../methods/events.php?action=get_active_events');
+                const response = await fetch(BASE_URL + 'methods/events.php?action=get_active_events');
                 const result = await response.json();
                 
                 if (result.success) {
@@ -380,7 +383,7 @@
                     event_id: currentEvent ? currentEvent.id : null
                 });
                 
-                const response = await fetch('../methods/reception.php', {
+                const response = await fetch(BASE_URL + 'methods/reception.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -526,7 +529,7 @@
             }
             
             try {
-                const response = await fetch('../methods/reception.php', {
+                const response = await fetch(BASE_URL + 'methods/reception.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -584,7 +587,7 @@
             }
             
             try {
-                const response = await fetch('../methods/reception.php', {
+                const response = await fetch(BASE_URL + 'methods/reception.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -645,7 +648,7 @@
             if (!currentEvent) return;
             
             try {
-                const response = await fetch('../methods/reception.php', {
+                const response = await fetch(BASE_URL + 'methods/reception.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -685,7 +688,7 @@
             if (testBtn) {
                 testBtn.addEventListener('click', async function() {
                     try {
-                        const response = await fetch('../methods/test_connection.php');
+                        const response = await fetch(BASE_URL + 'methods/test_connection.php');
                         const result = await response.json();
                         
                         if (result.success) {
