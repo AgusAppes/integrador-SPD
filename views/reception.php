@@ -334,6 +334,8 @@
             if (e.key === 'Enter') {
                 const value = this.value.trim();
                 if (!value) return;
+                // Limpiar DNI anterior al hacer nuevo escaneo
+                lastScannedDNI = null;
                 const parsed = parseDNIBarcode(value);
                 displayParsedResult(parsed);
                 this.value = ''; // limpiar para el siguiente escaneo
@@ -344,6 +346,8 @@
         scannerInput.addEventListener('paste', function(e) {
             setTimeout(() => {
                 const value = this.value.trim();
+                // Limpiar DNI anterior al hacer nuevo escaneo
+                lastScannedDNI = null;
                 const parsed = parseDNIBarcode(value);
                 displayParsedResult(parsed);
                 this.value = '';
@@ -377,6 +381,9 @@
         // Función para procesar DNI con el backend
         async function processDNIWithBackend(dniData) {
             try {
+                // Guardar el DNI para poder usarlo después de vender entrada
+                lastScannedDNI = dniData;
+                
                 console.log('Enviando datos al backend:', { 
                     action: 'scan_dni', 
                     dni_data: dniData,
@@ -562,18 +569,51 @@
             }
         }
 
+        // Variable global para almacenar el último DNI escaneado
+        let lastScannedDNI = null;
+
         // Función para vender entrada
-        function sellTicket(userId, ticketId) {
+        async function sellTicket(userId, ticketId) {
             console.log('Vendiendo entrada para usuario:', userId, 'entrada:', ticketId);
             
-            if (ticketId && ticketId !== '') {
-                // Tiene entrada existente - cambiar estado a vendida
-                showToast('Reactivando entrada existente - Pendiente de implementar', 'info');
-                // TODO: Implementar lógica para cambiar estado de entrada a "vendida" (1)
-            } else {
-                // No tiene entrada - crear nueva venta
-                showToast('Vendiendo nueva entrada - Pendiente de implementar', 'info');
-                // TODO: Implementar lógica para crear nueva entrada con estado "vendida" (1)
+            if (!currentEvent) {
+                showToast('No hay evento seleccionado', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(BASE_URL + 'methods/reception.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'sell_ticket',
+                        user_id: userId,
+                        event_id: currentEvent.id
+                    })
+                });
+
+                const result = await response.json();
+                console.log('Resultado de la venta:', result);
+
+                if (result.success) {
+                    showToast(result.message + ' - Nro. Serie: ' + result.data.nro_serie, 'success');
+                    
+                    // Si tenemos el DNI del último escaneo, refrescar la información
+                    if (lastScannedDNI) {
+                        console.log('Refrescando información del DNI después de la venta...');
+                        await processDNIWithBackend(lastScannedDNI);
+                    } else {
+                        // Limpiar resultado de verificación para permitir nuevo escaneo
+                        document.getElementById('verification-result').style.display = 'none';
+                    }
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error al vender entrada:', error);
+                showToast('Error de conexión al procesar la venta', 'error');
             }
         }
 

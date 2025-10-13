@@ -460,6 +460,109 @@ function checkEventCapacity($eventId) {
     }
 }
 
+// Función para vender entrada en puerta
+function venderEntradaEnPuerta($userId, $eventId) {
+    try {
+        $pdo = db_connection();
+        
+        // Iniciar transacción
+        $pdo->beginTransaction();
+        
+        // 1. Verificar que el evento existe
+        $stmt = $pdo->prepare("SELECT * FROM eventos WHERE id = ?");
+        $stmt->execute([$eventId]);
+        $evento = $stmt->fetch();
+        
+        if (!$evento) {
+            $pdo->rollBack();
+            return [
+                'success' => false,
+                'message' => 'Evento no encontrado'
+            ];
+        }
+        
+        // 2. Verificar que el usuario no tenga ya una entrada activa para este evento
+        $stmt = $pdo->prepare("
+            SELECT id, id_estado 
+            FROM entradas 
+            WHERE id_usuario = ? AND id_evento = ? AND id_estado IN (1, 3)
+            LIMIT 1
+        ");
+        $stmt->execute([$userId, $eventId]);
+        $entradaExistente = $stmt->fetch();
+        
+        if ($entradaExistente) {
+            $pdo->rollBack();
+            return [
+                'success' => false,
+                'message' => 'El usuario ya tiene una entrada activa para este evento'
+            ];
+        }
+        
+        // 3. Generar número de serie: ID_evento + número aleatorio
+        $nro_serie = intval($eventId . rand(10000, 99999));
+        
+        // 4. Crear registro en tabla entradas (tipo 2 = en puerta, estado 1 = vendida)
+        $stmt = $pdo->prepare("
+            INSERT INTO entradas (nro_serie, id_usuario, id_evento, id_estado, id_tipo_entrada, precio) 
+            VALUES (?, ?, ?, 1, 2, ?)
+        ");
+        $stmt->execute([
+            $nro_serie,
+            $userId,
+            $eventId,
+            $evento['precio_en_puerta']
+        ]);
+        $id_entrada = $pdo->lastInsertId();
+        
+        // 5. Crear registro en tabla ventas
+        $stmt = $pdo->prepare("
+            INSERT INTO ventas (fecha_venta, cantidad_entradas, monto_total, id_usuario) 
+            VALUES (NOW(), 1, ?, ?)
+        ");
+        $stmt->execute([
+            $evento['precio_en_puerta'],
+            $userId
+        ]);
+        $id_venta = $pdo->lastInsertId();
+        
+        // 6. Crear registro en tabla detalle_venta
+        $stmt = $pdo->prepare("
+            INSERT INTO detalle_venta (id_venta, id_entrada) 
+            VALUES (?, ?)
+        ");
+        $stmt->execute([
+            $id_venta,
+            $id_entrada
+        ]);
+        
+        // Confirmar transacción
+        $pdo->commit();
+        
+        return [
+            'success' => true,
+            'message' => 'Entrada vendida exitosamente',
+            'data' => [
+                'nro_serie' => $nro_serie,
+                'evento' => $evento['nombre'],
+                'precio' => $evento['precio_en_puerta'],
+                'id_venta' => $id_venta,
+                'id_entrada' => $id_entrada
+            ]
+        ];
+        
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log("Error en venderEntradaEnPuerta: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error al procesar la venta: ' . $e->getMessage()
+        ];
+    }
+}
+
 // Manejar peticiones AJAX
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
@@ -495,6 +598,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 case 'check_capacity':
                     $eventId = $input['event_id'] ?? null;
                     $result = checkEventCapacity($eventId);
+                    echo json_encode($result);
+                    exit;
+                    
+                case 'sell_ticket':
+                    $userId = $input['user_id'] ?? null;
+                    $eventId = $input['event_id'] ?? null;
+                    $result = venderEntradaEnPuerta($userId, $eventId);
                     echo json_encode($result);
                     exit;
             }
