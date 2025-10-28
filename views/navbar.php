@@ -25,8 +25,10 @@ $nombre_usuario = $usuario_logueado ? $_SESSION['usuario_nombre'] : '';
                 <?php if ($es_admin): ?>
                     <li><a href="<?php echo BASE_URL; ?>index.php?page=admin">Panel Admin</a></li>
                     <li><a href="<?php echo BASE_URL; ?>index.php?page=admin-eventos">Gestionar Eventos</a></li>
-                <?php elseif ($es_reception): ?>
-                    <!-- Opciones específicas para recepcionista -->
+                <?php endif; ?>
+                
+                <?php if ($es_reception || $es_admin): ?>
+                    <!-- Opciones para recepcionista -->
                     <li><a href="<?php echo BASE_URL; ?>index.php?page=reception">Panel Recepción</a></li>
                 <?php endif; ?>
                 <li><a href="<?php echo BASE_URL; ?>index.php?page=home#container-ubicacion">Ubicación</a></li>

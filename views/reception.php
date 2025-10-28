@@ -179,7 +179,7 @@
                     // Limpiar localStorage
                     localStorage.removeItem('selectedEvent');
                     // Volver al selector
-                    document.getElementById('event-selector').style.display = 'block';
+                    document.getElementById('event-selector').style.display = 'flex';
                     document.getElementById('event-header').style.display = 'none';
                     document.getElementById('main-panels').style.display = 'none';
                     // Limpiar selección
@@ -383,12 +383,6 @@
             try {
                 // Guardar el DNI para poder usarlo después de vender entrada
                 lastScannedDNI = dniData;
-                
-                console.log('Enviando datos al backend:', { 
-                    action: 'scan_dni', 
-                    dni_data: dniData,
-                    event_id: currentEvent ? currentEvent.id : null
-                });
                 
                 const response = await fetch(BASE_URL + 'methods/reception.php', {
                     method: 'POST',

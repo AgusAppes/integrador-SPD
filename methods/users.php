@@ -50,15 +50,24 @@ function crear_usuario($datos) {
         }
         
         // Verificar si el DNI ya existe
-        $sql_dni = "SELECT id FROM usuarios WHERE dni = :dni";
+        $sql_dni = "SELECT id, correo FROM usuarios WHERE dni = :dni";
         $stmt_dni = $conexion->prepare($sql_dni);
         $stmt_dni->execute([':dni' => $datos['dni']]);
-        if ($stmt_dni->fetch()) {
-            return [
-                'success' => false,
-                'message' => 'Ya existe un usuario con ese DNI',
-                'data' => null
-            ];
+        $usuario_existente = $stmt_dni->fetch();
+        
+        if ($usuario_existente) {
+            // Si el usuario existe pero tiene el correo genérico, permitir actualización
+            if ($usuario_existente['correo'] === 'sinconfigurar@mail.com') {
+                // Actualizar el usuario existente con los nuevos datos
+                return actualizar_usuario_generico($usuario_existente['id'], $datos);
+            } else {
+                // Si tiene un correo real, no permitir duplicado
+                return [
+                    'success' => false,
+                    'message' => 'Ya existe un usuario con ese DNI',
+                    'data' => null
+                ];
+            }
         }
         
         // Verificar si el correo ya existe
@@ -130,13 +139,87 @@ function crear_usuario($datos) {
     }
 }
 
+// Función para actualizar usuario con correo genérico
+function actualizar_usuario_generico($id_usuario, $datos) {
+    try {
+        $conexion = db_connection();
+        
+        // Verificar si el nuevo correo ya existe (en otro usuario)
+        $sql_correo = "SELECT id FROM usuarios WHERE correo = :correo AND id != :id";
+        $stmt_correo = $conexion->prepare($sql_correo);
+        $stmt_correo->execute([':correo' => $datos['correo'], ':id' => $id_usuario]);
+        if ($stmt_correo->fetch()) {
+            return [
+                'success' => false,
+                'message' => 'Ya existe un usuario con ese correo electrónico',
+                'data' => null
+            ];
+        }
+        
+        // Encriptar contraseña
+        $contraseña_hash = password_hash($datos['contraseña'], PASSWORD_DEFAULT);
+        
+        // Actualizar el usuario existente
+        $sql = "UPDATE usuarios SET 
+                    nombre = :nombre, 
+                    apellido = :apellido, 
+                    correo = :correo, 
+                    contraseña = :password
+                WHERE id = :id";
+        
+        $stmt = $conexion->prepare($sql);
+        $resultado = $stmt->execute([
+            ':nombre' => $datos['nombre'],
+            ':apellido' => $datos['apellido'],
+            ':correo' => $datos['correo'],
+            ':password' => $contraseña_hash,
+            ':id' => $id_usuario
+        ]);
+        
+        if ($resultado) {
+            return [
+                'success' => true,
+                'message' => 'Usuario actualizado exitosamente',
+                'data' => [
+                    'id' => $id_usuario,
+                    'nombre' => $datos['nombre'],
+                    'apellido' => $datos['apellido'],
+                    'correo' => $datos['correo'],
+                    'dni' => $datos['dni']
+                ]
+            ];
+        } else {
+            return [
+                'success' => false,
+                'message' => 'Error al actualizar el usuario',
+                'data' => null
+            ];
+        }
+        
+    } catch (PDOException $e) {
+        error_log("Error en actualizar_usuario_generico: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error de base de datos: ' . $e->getMessage(),
+            'data' => null
+        ];
+    } catch (Exception $e) {
+        error_log("Error general en actualizar_usuario_generico: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error interno del servidor',
+            'data' => null
+        ];
+    }
+}
+
 // Función para iniciar sesión
 function iniciar_sesion($datos) {
     try {
         $conexion = db_connection();
         
         // Validar datos requeridos
-        if (!isset($datos['correo']) || empty(trim($datos['correo']))) {
+        if (!isset($datos['correo'])) {
             return [
                 'success' => false,
                 'message' => 'El correo electrónico es requerido',
@@ -144,7 +227,7 @@ function iniciar_sesion($datos) {
             ];
         }
         
-        if (!isset($datos['contraseña']) || empty(trim($datos['contraseña']))) {
+        if (!isset($datos['contraseña'])) {
             return [
                 'success' => false,
                 'message' => 'La contraseña es requerida',
