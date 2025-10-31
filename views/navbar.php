@@ -24,7 +24,6 @@ $nombre_usuario = $usuario_logueado ? $_SESSION['usuario_nombre'] : '';
                 <!-- Opciones para usuarios logueados -->
                 <?php if ($es_admin): ?>
                     <li><a href="<?php echo BASE_URL; ?>index.php?page=admin">Panel Admin</a></li>
-                    <li><a href="<?php echo BASE_URL; ?>index.php?page=admin-eventos">Gestionar Eventos</a></li>
                 <?php endif; ?>
                 
                 <?php if ($es_reception || $es_admin): ?>

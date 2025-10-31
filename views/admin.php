@@ -13,7 +13,7 @@
     <!-- Estilos de modales -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/modal.css">
 </head>
-<body>
+<body class="admin-page">
     <!-- Container para notificaciones toast -->
     <div id="toast-container" class="toast-container"></div>
     
@@ -22,40 +22,51 @@
     
     <!-- Contenido principal -->
     <div class="main-content">
-        <!-- Panel de Administración -->
-        <div class="admin-panel">
-        <h1>Panel de Administración</h1>
-        
-        
-        <!-- Sección de Eventos -->
-        <div class="admin-section">
-            <h2>Gestión de Eventos</h2>
-            <div class="admin-actions">
-                <button class="btn btn-primary" onclick="openModal('createEventModal')">
-                    <i class="icon">+</i> Crear Evento
-                </button>
-                <button class="btn btn-secondary" onclick="window.location.href='<?php echo BASE_URL; ?>index.php?page=admin-eventos'">
-                    Gestionar Eventos
-                </button>
+        <div class="admin-container">
+            <!-- Barra lateral -->
+            <div class="admin-sidebar">
+                <h2>Panel de Administración</h2>
+                
+                <!-- Sección de Eventos -->
+                <div class="sidebar-section">
+                    <h3>Gestión de Eventos</h3>
+                    <div class="sidebar-actions">
+                        <button class="btn btn-secondary sidebar-btn" onclick="openModal('createEventModal')">
+                            Crear Evento
+                        </button>
+                        <button class="btn btn-secondary sidebar-btn" onclick="window.location.href='<?php echo BASE_URL; ?>index.php?page=admin-eventos'">
+                            Gestionar Eventos
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Futuras secciones -->
+                <div class="sidebar-section">
+                    <h3>Gestión de Ventas</h3>
+                    <div class="sidebar-actions">
+                        <button class="btn btn-secondary sidebar-btn" disabled>
+                            💰 Ver Ventas (Próximamente)
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h3>Gestión de Usuarios</h3>
+                    <div class="sidebar-actions">
+                        <button class="btn btn-secondary sidebar-btn" disabled>
+                            👥 Ver Usuarios (Próximamente)
+                        </button>
+                    </div>
+                </div>
             </div>
-        </div>
-        
-        <!-- futuras secciones -->
-        <div class="admin-section">
-            <h2>Gestión de Ventas</h2>
-            <div class="admin-actions">
-                <button class="btn btn-secondary" disabled>
-                    Ver Ventas (Próximamente)
-                </button>
-            </div>
-        </div>
-        
-        <div class="admin-section">
-            <h2>Gestión de Usuarios</h2>
-            <div class="admin-actions">
-                <button class="btn btn-secondary" disabled>
-                    Ver Usuarios (Próximamente)
-                </button>
+            
+            <!-- Contenido central -->
+            <div class="admin-main-content">
+                <div class="construction-message">
+                    <div class="construction-icon">🚧</div>
+                    <h1>En Construcción</h1>
+                    <p>Esta sección está siendo desarrollada. Utiliza las opciones del menú lateral para gestionar el sistema.</p>
+                </div>
             </div>
         </div>
     </div>

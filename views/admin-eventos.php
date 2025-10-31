@@ -119,7 +119,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
     <!-- Estilos de modales -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/modal.css">
 </head>
-<body>
+<body class="admin-page">
     <!-- Container para notificaciones toast -->
     <div id="toast-container" class="toast-container"></div>
     
