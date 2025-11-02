@@ -110,6 +110,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Gestión de Eventos</title>
+    <link rel="icon" type="image/png" href="<?php echo BASE_URL; ?>img/favicon.png">
     <!-- Estilos base (incluye navbar) -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/styles.css">
     <!-- Estilos del panel de administración -->

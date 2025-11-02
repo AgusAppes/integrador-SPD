@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Crear Evento</title>
+    <link rel="icon" type="image/png" href="<?php echo BASE_URL; ?>img/favicon.png">
     <!-- Estilos base (incluye navbar) -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/styles.css">
     <!-- Estilos del panel de administración -->
@@ -88,7 +89,7 @@
 
                     <div class="form-group">
                         <label for="fecha">Fecha del Evento <span class="required">*</span></label>
-                        <input type="date" id="fecha" name="fecha" required>
+                        <input type="date" id="fecha" name="fecha" min="<?php echo date('Y-m-d'); ?>" required>
                     </div>
                 </div>
                 <div class="form-group">

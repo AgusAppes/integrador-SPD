@@ -69,6 +69,7 @@ $mensaje_exito = isset($_GET['success']) ? urldecode($_GET['success']) : 'Entrad
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo de Eventos</title>
+    <link rel="icon" type="image/png" href="<?php echo BASE_URL; ?>img/favicon.png">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/styles.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/catalogo.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/modal.css">
