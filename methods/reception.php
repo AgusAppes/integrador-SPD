@@ -21,7 +21,10 @@ function processDNIScan($dniData, $eventId = null) {
         $existingUser = findUserByDNI($dni);
         
         if ($existingUser) {
-            // Usuario existe, verificar entrada si se proporciona eventId
+            // Usuario existe, actualizar datos con información real del DNI
+            $updatedUser = updateUserDataFromDNI($existingUser['id'], $dniData);
+            
+            // Verificar entrada si se proporciona eventId
             $ticketInfo = null;
             if ($eventId) {
                 $ticketInfo = checkUserTicketForEvent($existingUser['id'], $eventId);
@@ -29,8 +32,8 @@ function processDNIScan($dniData, $eventId = null) {
             
             return [
                 'success' => true,
-                'message' => 'Usuario encontrado',
-                'user' => $existingUser,
+                'message' => 'Usuario encontrado y datos actualizados',
+                'user' => $updatedUser ? $updatedUser : $existingUser,
                 'action' => 'found',
                 'ticket' => $ticketInfo
             ];
@@ -130,6 +133,90 @@ function findUserByDNI($dni) {
     }
 }
 
+// Función para actualizar datos del usuario desde el DNI escaneado
+function updateUserDataFromDNI($userId, $barcodeData) {
+    try {
+        error_log("=== INICIO ACTUALIZACIÓN DE USUARIO ID: $userId ===");
+        
+        $pdo = db_connection();
+        
+        // Obtener datos actuales del usuario
+        $stmt = $pdo->prepare("SELECT nombre, apellido, fecha_nac FROM usuarios WHERE id = ?");
+        $stmt->execute([$userId]);
+        $currentData = $stmt->fetch(PDO::FETCH_ASSOC);
+        error_log("Datos actuales del usuario: " . json_encode($currentData));
+        
+        // Extraer datos del código de barras
+        $userData = extractUserDataFromBarcode($barcodeData);
+        error_log("Datos a actualizar: " . json_encode($userData));
+        
+        // Si se extrajeron datos, actualizar el usuario
+        if (!empty($userData)) {
+            $updateFields = [];
+            $updateValues = [];
+            
+            if (isset($userData['nombre']) && !empty($userData['nombre'])) {
+                $updateFields[] = "nombre = ?";
+                $updateValues[] = $userData['nombre'];
+                error_log("Se actualizará nombre: " . $userData['nombre']);
+            }
+            
+            if (isset($userData['apellido']) && !empty($userData['apellido'])) {
+                $updateFields[] = "apellido = ?";
+                $updateValues[] = $userData['apellido'];
+                error_log("Se actualizará apellido: " . $userData['apellido']);
+            }
+            
+            if (isset($userData['fecha_nac']) && !empty($userData['fecha_nac'])) {
+                $updateFields[] = "fecha_nac = ?";
+                $updateValues[] = $userData['fecha_nac'];
+                error_log("Se actualizará fecha_nac: " . $userData['fecha_nac']);
+            }
+            
+            // Si hay campos para actualizar
+            if (!empty($updateFields)) {
+                $updateValues[] = $userId;
+                $sql = "UPDATE usuarios SET " . implode(", ", $updateFields) . " WHERE id = ?";
+                error_log("SQL a ejecutar: $sql");
+                error_log("Valores: " . json_encode($updateValues));
+                
+                $stmt = $pdo->prepare($sql);
+                $result = $stmt->execute($updateValues);
+                $rowsAffected = $stmt->rowCount();
+                
+                error_log("Resultado de UPDATE: " . ($result ? "ÉXITO" : "FALLO"));
+                error_log("Filas afectadas: $rowsAffected");
+                
+                // Retornar el usuario actualizado
+                $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE id = ?");
+                $stmt->execute([$userId]);
+                $updatedUser = $stmt->fetch();
+                error_log("Datos después de actualizar: " . json_encode([
+                    'nombre' => $updatedUser['nombre'],
+                    'apellido' => $updatedUser['apellido'],
+                    'fecha_nac' => $updatedUser['fecha_nac']
+                ]));
+                error_log("=== FIN ACTUALIZACIÓN DE USUARIO ===");
+                
+                return $updatedUser;
+            } else {
+                error_log("No hay campos para actualizar");
+                error_log("=== FIN ACTUALIZACIÓN DE USUARIO (sin cambios) ===");
+            }
+        } else {
+            error_log("No se extrajeron datos del código de barras");
+            error_log("=== FIN ACTUALIZACIÓN DE USUARIO (sin datos) ===");
+        }
+        
+        return false;
+        
+    } catch (Exception $e) {
+        error_log("ERROR en updateUserDataFromDNI: " . $e->getMessage());
+        error_log("Stack trace: " . $e->getTraceAsString());
+        return false;
+    }
+}
+
 // Función para crear usuario desde datos del DNI
 function createUserFromDNI($dni, $barcodeData) {
     try {
@@ -178,41 +265,99 @@ function createUserFromDNI($dni, $barcodeData) {
 
 // Función para extraer datos del usuario del código de barras
 function extractUserDataFromBarcode($barcodeData) {
+    // Log del dato crudo
+    error_log("=== INICIO EXTRACCIÓN DE DATOS DEL DNI ===");
+    error_log("Código de barras RAW: " . $barcodeData);
+    
+    // Normalizar comillas
     $quotes = array(
-        "\u201C", "\u201D", "\u201E", "\u201F", "\u2018", "\u2019"
+        "\u201C", "\u201D", "\u201E", "\u201F", "\u2018", "\u2019",
+        chr(0xE2) . chr(0x80) . chr(0x9C), // "
+        chr(0xE2) . chr(0x80) . chr(0x9D), // "
+        chr(0xE2) . chr(0x80) . chr(0x98), // '
+        chr(0xE2) . chr(0x80) . chr(0x99)  // '
     );
     $normalized = str_replace($quotes, '"', $barcodeData);
-    $parts = array_filter(array_map('trim', explode('"', $normalized)), function($part) {
-        return !empty($part);
-    });
+    
+    // Dividir por comillas
+    $parts = explode('"', $normalized);
+    $parts = array_values(array_filter(array_map('trim', $parts), function($part) {
+        return $part !== '';
+    }));
+    
+    error_log("Partes separadas (" . count($parts) . "): " . json_encode($parts));
     
     $userData = [];
     $genders = ['M', 'F', 'O'];
+    $genderIndex = -1;
     
-    // Buscar nombre y apellido
+    // Buscar índice del género
     for ($i = 0; $i < count($parts); $i++) {
-        $part = strtoupper($parts[$i]);
-        if (in_array($part, $genders)) {
-            // El nombre suele estar antes del género
-            if ($i > 0) {
-                $userData['nombre'] = $parts[$i - 1];
-            }
-            // El apellido suele estar en la segunda posición
-            if (count($parts) > 1) {
-                $userData['apellido'] = $parts[1];
-            }
+        $partUpper = strtoupper(trim($parts[$i]));
+        if (in_array($partUpper, $genders)) {
+            $genderIndex = $i;
+            error_log("Género encontrado en índice $i: " . $partUpper);
             break;
         }
     }
     
-    // Buscar fecha de nacimiento (formato DD-MM-YYYY)
-    foreach ($parts as $part) {
-        if (preg_match('/\d{2}-\d{2}-\d{4}/', $part)) {
-            $dateParts = explode('-', $part);
-            $userData['fecha_nac'] = $dateParts[2] . '-' . $dateParts[1] . '-' . $dateParts[0];
-            break;
+    // Si encontramos el género, extraer nombre y apellido
+    if ($genderIndex >= 0) {
+        // Formato típico: NOMBRE @ APELLIDO @ SEXO @ DNI @ ...
+        if ($genderIndex >= 2) {
+            $apellidoCompleto = trim($parts[$genderIndex - 2]);
+            $userData['apellido'] = ucwords(strtolower($apellidoCompleto));
+            error_log("Apellido extraído (pos " . ($genderIndex - 2) . "): " . $userData['apellido']);
+        }
+        
+        if ($genderIndex >= 1) {
+            $nombreCompleto = trim($parts[$genderIndex - 1]);
+            $userData['nombre'] = ucwords(strtolower($nombreCompleto));
+            error_log("Nombre extraído (pos " . ($genderIndex - 1) . "): " . $userData['nombre']);
         }
     }
+    
+    // Si no se encontró nombre o apellido con la lógica anterior, intentar otros patrones
+    if (empty($userData['nombre']) && count($parts) >= 1) {
+        $userData['nombre'] = ucwords(strtolower(trim($parts[0])));
+        error_log("Nombre extraído (fallback, pos 0): " . $userData['nombre']);
+    }
+    
+    if (empty($userData['apellido']) && count($parts) >= 2) {
+        $userData['apellido'] = ucwords(strtolower(trim($parts[1])));
+        error_log("Apellido extraído (fallback, pos 1): " . $userData['apellido']);
+    }
+    
+    // Buscar fecha de nacimiento en diferentes formatos
+    foreach ($parts as $index => $part) {
+        $part = trim($part);
+        
+        // Formato DD/MM/YYYY o DD-MM-YYYY
+        if (preg_match('/(\d{2})[\/-](\d{2})[\/-](\d{4})/', $part, $matches)) {
+            $dia = $matches[1];
+            $mes = $matches[2];
+            $anio = $matches[3];
+            $userData['fecha_nac'] = "$anio-$mes-$dia";
+            error_log("Fecha encontrada (formato DD/MM/YYYY) en pos $index: " . $userData['fecha_nac']);
+            break;
+        }
+        
+        // Formato DDMMYYYY (8 dígitos seguidos)
+        if (preg_match('/^(\d{2})(\d{2})(\d{4})$/', $part, $matches)) {
+            $dia = $matches[1];
+            $mes = $matches[2];
+            $anio = $matches[3];
+            // Validar que sea una fecha válida
+            if ($mes >= 1 && $mes <= 12 && $dia >= 1 && $dia <= 31 && $anio >= 1900 && $anio <= date('Y')) {
+                $userData['fecha_nac'] = "$anio-$mes-$dia";
+                error_log("Fecha encontrada (formato DDMMYYYY) en pos $index: " . $userData['fecha_nac']);
+                break;
+            }
+        }
+    }
+    
+    error_log("Datos finales extraídos: " . json_encode($userData));
+    error_log("=== FIN EXTRACCIÓN DE DATOS DEL DNI ===");
     
     return $userData;
 }
