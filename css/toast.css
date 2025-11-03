@@ -1,0 +1,224 @@
+/* ========== SISTEMA DE NOTIFICACIONES TOAST ========== */
+
+/* Container para las notificaciones */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+/* Notificación individual */
+.toast {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 12px 16px;
+    min-width: 300px;
+    max-width: 400px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: auto;
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.toast.hide {
+    transform: translateX(100%);
+    opacity: 0;
+}
+
+/* Iconos de las notificaciones */
+.toast-icon {
+    font-size: 18px;
+    font-weight: bold;
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+}
+
+/* Contenido del toast */
+.toast-content {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.toast-title {
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: #495057;
+}
+
+.toast-message {
+    color: #6c757d;
+}
+
+/* Botón cerrar */
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 16px;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+    transition: all 0.15s ease;
+}
+
+.toast-close:hover {
+    background-color: #f8f9fa;
+    color: #495057;
+}
+
+/* Barra de progreso */
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background-color: rgba(0, 0, 0, 0.1);
+    transition: width linear;
+}
+
+/* Tipos de notificación */
+.toast.toast-success {
+    border-left: 4px solid #28a745;
+}
+
+.toast.toast-success .toast-icon {
+    color: #28a745;
+}
+
+.toast.toast-success .toast-progress {
+    background-color: #28a745;
+}
+
+.toast.toast-error {
+    border-left: 4px solid #dc3545;
+}
+
+.toast.toast-error .toast-icon {
+    color: #dc3545;
+}
+
+.toast.toast-error .toast-progress {
+    background-color: #dc3545;
+}
+
+.toast.toast-warning {
+    border-left: 4px solid #ffc107;
+}
+
+.toast.toast-warning .toast-icon {
+    color: #ffc107;
+}
+
+.toast.toast-warning .toast-progress {
+    background-color: #ffc107;
+}
+
+.toast.toast-info {
+    border-left: 4px solid #17a2b8;
+}
+
+.toast.toast-info .toast-icon {
+    color: #17a2b8;
+}
+
+.toast.toast-info .toast-progress {
+    background-color: #17a2b8;
+}
+
+/* Responsive para toast */
+@media (max-width: 768px) {
+    .toast-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+    }
+    
+    .toast {
+        min-width: auto;
+        max-width: none;
+        width: 100%;
+    }
+}
+
+/* Animaciones personalizadas */
+@keyframes toastSlideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes toastSlideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Variantes de posicionamiento */
+.toast-container.toast-top-left {
+    top: 20px;
+    left: 20px;
+    right: auto;
+}
+
+.toast-container.toast-top-left .toast {
+    transform: translateX(-100%);
+}
+
+.toast-container.toast-top-left .toast.show {
+    transform: translateX(0);
+}
+
+.toast-container.toast-bottom-right {
+    top: auto;
+    bottom: 20px;
+    right: 20px;
+}
+
+.toast-container.toast-bottom-left {
+    top: auto;
+    bottom: 20px;
+    left: 20px;
+    right: auto;
+}
+
+.toast-container.toast-bottom-left .toast {
+    transform: translateX(-100%);
+}
+
+.toast-container.toast-bottom-left .toast.show {
+    transform: translateX(0);
+}

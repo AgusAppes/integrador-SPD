@@ -1,0 +1,25 @@
+# Archivos de configuración con datos sensibles
+config/config.php
+
+# Archivos temporales del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+error_log
+
+# Archivos de respaldo
+*.bak
+*.backup
+*~
+
+# Directorio de imágenes subidas por usuarios
+images/eventos/
+

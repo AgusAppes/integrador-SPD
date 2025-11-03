@@ -1,0 +1,416 @@
+/* ============================================
+   Estilos para la gestión de ventas (admin-ventas.php)
+   ============================================ */
+
+/* Contenedor de filtros */
+.filtros-container {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #dee2e6;
+}
+
+.filtros-container h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+/* Formulario de filtros */
+.filtros-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    align-items: end;
+}
+
+/* Grupo de formulario en filtros */
+.filtros-form .form-group {
+    display: block;
+}
+
+.filtros-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9em;
+}
+
+/* Inputs en filtros */
+.filtros-form input[type="number"],
+.filtros-form input[type="text"],
+.filtros-form input[type="date"],
+.filtros-form select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.filtros-form select {
+    background-color: #fff;
+}
+
+/* Botones de acción en filtros */
+.filtros-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.filtros-actions .btn-primary {
+    flex: 1;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    font-weight: 600;
+}
+
+.filtros-actions .btn-secondary {
+    flex: 1;
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    background-color: #6c757d;
+    color: white;
+    font-weight: 600;
+}
+
+/* Contenedor de título y botón de descarga */
+.sales-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.sales-header h2 {
+    margin: 0;
+}
+
+/* Botón de descargar informe */
+.btn-download-report {
+    padding: 8px 16px;
+    background-color: #28a745;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.btn-download-report:hover {
+    background-color: #218838;
+    color: white;
+}
+
+/* Badge de estado en tabla */
+.estado-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    color: white;
+    font-size: 0.85em;
+    font-weight: 600;
+    text-align: center;
+}
+
+.estado-badge-detail {
+    font-size: 0.8em;
+    opacity: 0.9;
+    display: block;
+    margin-top: 2px;
+}
+
+/* Resumen de venta en modal */
+.venta-resumen {
+    background: #f5f5f5;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    pointer-events: none;
+}
+
+.venta-resumen h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 10px;
+}
+
+/* Grid de resumen */
+.resumen-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.resumen-item {
+    color: #333;
+}
+
+.resumen-item-full {
+    grid-column: 1 / -1;
+}
+
+.resumen-item .monto-total-display {
+    font-size: 1.2em;
+    color: #2e7d32;
+    font-weight: bold;
+}
+
+/* Información de entradas */
+.entradas-info {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #ddd;
+}
+
+.entradas-info h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #555;
+}
+
+.estados-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.estado-card {
+    background: white;
+    padding: 10px;
+    border-radius: 5px;
+    border-left: 4px solid #757575;
+}
+
+.estado-card-vendida {
+    border-left-color: #4caf50;
+}
+
+.estado-card-cancelada {
+    border-left-color: #f44336;
+}
+
+.estado-card-consumida {
+    border-left-color: #2196f3;
+}
+
+.estado-card strong {
+    color: inherit;
+}
+
+.estado-card-vendida strong {
+    color: #4caf50;
+}
+
+.estado-card-cancelada strong {
+    color: #f44336;
+}
+
+.estado-card-consumida strong {
+    color: #2196f3;
+}
+
+/* Advertencia de inconsistencia */
+.warning-box {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    padding: 12px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.warning-box strong {
+    color: #856404;
+}
+
+.warning-box p {
+    margin: 8px 0 0 0;
+    color: #856404;
+}
+
+/* Formulario de edición */
+.edit-form-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.edit-form-section p {
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+}
+
+/* Campo editable - Monto Total */
+.monto-total-group {
+    position: relative;
+    z-index: 100;
+    pointer-events: auto;
+}
+
+.monto-total-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.monto-total-group label .required {
+    color: #d32f2f;
+}
+
+.monto-total-input {
+    font-size: 1.1em;
+    padding: 12px;
+    width: 100%;
+    border: 2px solid #007bff;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: #fff;
+    color: #333;
+    cursor: text;
+    pointer-events: auto !important;
+    z-index: 100;
+    position: relative;
+}
+
+.monto-total-group small {
+    color: #666;
+    font-size: 0.9em;
+    display: block;
+    margin-top: 8px;
+}
+
+/* Sección de edición de estados de entradas */
+.estados-entradas-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #ddd;
+}
+
+.estados-entradas-section h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.entradas-editable-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.entrada-editable-item {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #757575;
+}
+
+.entrada-editable-item-vendida {
+    border-left-color: #4caf50;
+}
+
+.entrada-editable-item-cancelada {
+    border-left-color: #f44336;
+}
+
+.entrada-editable-item-consumida {
+    border-left-color: #2196f3;
+}
+
+.entrada-editable-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.entrada-editable-info {
+    flex: 1;
+    min-width: 200px;
+}
+
+.entrada-editable-info strong {
+    color: #333;
+}
+
+.entrada-editable-precio {
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 3px;
+}
+
+.entrada-editable-select-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.entrada-editable-select-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+}
+
+.entrada-editable-select {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 1em;
+    background-color: #fff;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+/* Campo de solo lectura - Cantidad de Entradas */
+.cantidad-entradas-readonly {
+    background: #f5f5f5;
+    padding: 12px;
+    border-radius: 5px;
+    margin-top: 15px;
+}
+
+.cantidad-entradas-readonly label {
+    color: #666;
+    font-weight: normal;
+}
+
+.cantidad-entradas-readonly .cantidad-display {
+    font-size: 1.1em;
+    color: #333;
+    margin-top: 5px;
+}
+
+.cantidad-entradas-readonly .cantidad-display strong {
+    color: #333;
+}
+
+.cantidad-entradas-readonly .cantidad-info {
+    color: #666;
+    font-size: 0.9em;
+    margin-left: 10px;
+}
+
+.cantidad-entradas-readonly small {
+    color: #999;
+    font-size: 0.85em;
+    display: block;
+    margin-top: 5px;
+}
+
