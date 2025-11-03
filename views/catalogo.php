@@ -76,6 +76,18 @@ $mensaje_exito = isset($_GET['success']) ? urldecode($_GET['success']) : 'Entrad
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/toast.css">
 </head>
 <body>
+    <!-- Fondo animado -->
+    <div class="background">
+        <span class="ball"></span>
+        <span class="ball"></span>
+        <span class="ball"></span>
+        <span class="ball"></span>
+        <span class="ball"></span>
+        <span class="ball"></span>
+        <span class="ball"></span>
+        <span class="ball"></span>
+    </div>
+    
     <!-- Container para notificaciones toast -->
     <div id="toast-container" class="toast-container"></div>
     
