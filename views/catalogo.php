@@ -42,7 +42,27 @@ function listar_eventos() {
 
 // Obtener los eventos
 $eventos_resultado = listar_eventos();
-$eventos = $eventos_resultado['success'] ? $eventos_resultado['data'] : [];
+$todos_eventos = $eventos_resultado['success'] ? $eventos_resultado['data'] : [];
+
+// Separar eventos futuros y pasados
+$eventos_futuros = [];
+$eventos_pasados = [];
+$fecha_actual = new DateTime();
+$fecha_actual->setTime(0, 0, 0);
+
+foreach ($todos_eventos as $evento) {
+    $fecha_evento = new DateTime($evento['fecha']);
+    $fecha_evento->setTime(0, 0, 0);
+    
+    if ($fecha_evento >= $fecha_actual) {
+        $eventos_futuros[] = $evento;
+    } else {
+        $eventos_pasados[] = $evento;
+    }
+}
+
+// Para el modal de compra, usar todos los eventos
+$eventos = $todos_eventos;
 
 // Verificar si se debe mostrar el modal de compra
 $evento_compra = null;
@@ -50,8 +70,16 @@ $mostrar_modal_compra = false;
 if (isset($_GET['comprar']) && is_numeric($_GET['comprar'])) {
     foreach ($eventos as $evento) {
         if ($evento['id'] == $_GET['comprar']) {
-            $evento_compra = $evento;
-            $mostrar_modal_compra = true;
+            // Verificar que el evento no haya pasado
+            $fecha_evento = new DateTime($evento['fecha']);
+            $fecha_evento->setTime(0, 0, 0); // Resetear hora a medianoche para comparar solo fechas
+            $fecha_actual = new DateTime();
+            $fecha_actual->setTime(0, 0, 0); // Resetear hora a medianoche para comparar solo fechas
+            
+            if ($fecha_evento >= $fecha_actual) {
+                $evento_compra = $evento;
+                $mostrar_modal_compra = true;
+            }
             break;
         }
     }
@@ -96,59 +124,121 @@ $mensaje_exito = isset($_GET['success']) ? urldecode($_GET['success']) : 'Entrad
     
     <div class="main-content">
         <div class="catalog-container">
-            <?php if (!empty($eventos)): ?>
-                <div class="events-grid">
-                    <?php foreach ($eventos as $evento): ?>
-                        <div class="event-card">
-                            <a href="<?php echo BASE_URL; ?>index.php?page=catalogo&comprar=<?php echo $evento['id']; ?>" class="event-image-link">
-                                <div class="event-image">
-                                    <?php 
-                                    $imagen_src = !empty($evento['banner']) ? BASE_URL . htmlspecialchars($evento['banner']) : BASE_URL . 'img/malpa.png';
-                                    ?>
-                                    <img src="<?php echo $imagen_src; ?>" alt="<?php echo htmlspecialchars($evento['nombre']); ?>">
-                                    <div class="event-title-overlay">
-                                        <h3 class="event-title"><?php echo htmlspecialchars($evento['nombre']); ?></h3>
-                                    </div>
-                                    <div class="event-price-overlay">
-                                        <span class="price-tag">$<?php echo number_format($evento['precio_anticipadas'], 0, ',', '.'); ?></span>
-                                    </div>
-                                    <div class="event-hover-overlay">
-                                        <span class="hover-message">Comprá tu anticipada</span>
-                                    </div>
-                                </div>
-                            </a>
-                            
-                            <div class="event-content">
-                                <p class="event-description"><?php echo htmlspecialchars($evento['descripcion']); ?></p>
-                                
-                                <div class="event-details">
-                                    <div class="event-date">📆
+            <?php if (!empty($eventos_futuros) || !empty($eventos_pasados)): ?>
+                <!-- Eventos Futuros -->
+                <?php if (!empty($eventos_futuros)): ?>
+                    <div class="events-grid">
+                        <?php foreach ($eventos_futuros as $evento): ?>
+                            <div class="event-card">
+                                <a href="<?php echo BASE_URL; ?>index.php?page=catalogo&comprar=<?php echo $evento['id']; ?>" class="event-image-link">
+                                    <div class="event-image">
                                         <?php 
-                                        // Configurar local en español
-                                        setlocale(LC_TIME, 'es_ES.UTF-8', 'es_ES', 'spanish');
-                                        
-                                        // Array de días de la semana en español
-                                        $dias_semana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-                                        
-                                        // Array de meses en español
-                                        $meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                                                 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-                                        
-                                        // Obtener información de la fecha
-                                        $timestamp = strtotime($evento['fecha']);
-                                        $dia_semana = $dias_semana[date('w', $timestamp)];
-                                        $dia = date('j', $timestamp);
-                                        $mes = $meses[date('n', $timestamp)];
-                                        
-                                        echo $dia_semana . ' ' . $dia . ' de ' . $mes;
+                                        $imagen_src = !empty($evento['banner']) ? BASE_URL . htmlspecialchars($evento['banner']) : BASE_URL . 'img/malpa.png';
                                         ?>
+                                        <img src="<?php echo $imagen_src; ?>" alt="<?php echo htmlspecialchars($evento['nombre']); ?>">
+                                        <div class="event-title-overlay">
+                                            <h3 class="event-title"><?php echo htmlspecialchars($evento['nombre']); ?></h3>
+                                        </div>
+                                        <div class="event-price-overlay">
+                                            <span class="price-tag">$<?php echo number_format($evento['precio_anticipadas'], 0, ',', '.'); ?></span>
+                                        </div>
+                                        <div class="event-hover-overlay">
+                                            <span class="hover-message">Comprá tu anticipada</span>
+                                        </div>
+                                    </div>
+                                </a>
+                                
+                                <div class="event-content">
+                                    <p class="event-description"><?php echo htmlspecialchars($evento['descripcion']); ?></p>
+                                    
+                                    <div class="event-details">
+                                        <div class="event-date">📆
+                                            <?php 
+                                            // Configurar local en español
+                                            setlocale(LC_TIME, 'es_ES.UTF-8', 'es_ES', 'spanish');
+                                            
+                                            // Array de días de la semana en español
+                                            $dias_semana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                                            
+                                            // Array de meses en español
+                                            $meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                                                     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                                            
+                                            // Obtener información de la fecha
+                                            $timestamp = strtotime($evento['fecha']);
+                                            $dia_semana = $dias_semana[date('w', $timestamp)];
+                                            $dia = date('j', $timestamp);
+                                            $mes = $meses[date('n', $timestamp)];
+                                            
+                                            echo $dia_semana . ' ' . $dia . ' de ' . $mes;
+                                            ?>
+                                        </div>
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+                
+                <!-- Eventos Pasados -->
+                <?php if (!empty($eventos_pasados)): ?>
+                    <div class="past-events-section">
+                        <h2 class="past-events-title">Eventos Pasados</h2>
+                        <div class="events-grid past-events-grid">
+                            <?php foreach ($eventos_pasados as $evento): ?>
+                                <div class="event-card past-event-card">
+                                    <div class="event-image-link past-event-link">
+                                        <div class="event-image">
+                                            <?php 
+                                            $imagen_src = !empty($evento['banner']) ? BASE_URL . htmlspecialchars($evento['banner']) : BASE_URL . 'img/malpa.png';
+                                            ?>
+                                            <img src="<?php echo $imagen_src; ?>" alt="<?php echo htmlspecialchars($evento['nombre']); ?>">
+                                            <div class="event-title-overlay">
+                                                <h3 class="event-title"><?php echo htmlspecialchars($evento['nombre']); ?></h3>
+                                            </div>
+                                            <div class="event-price-overlay">
+                                                <span class="price-tag">$<?php echo number_format($evento['precio_anticipadas'], 0, ',', '.'); ?></span>
+                                            </div>
+                                            <div class="event-hover-overlay">
+                                                <span class="hover-message">Ya no hay ventas</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="event-content">
+                                        <p class="event-description"><?php echo htmlspecialchars($evento['descripcion']); ?></p>
+                                        
+                                        <div class="event-details">
+                                            <div class="event-date">📆
+                                                <?php 
+                                                // Configurar local en español
+                                                setlocale(LC_TIME, 'es_ES.UTF-8', 'es_ES', 'spanish');
+                                                
+                                                // Array de días de la semana en español
+                                                $dias_semana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                                                
+                                                // Array de meses en español
+                                                $meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                                                         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                                                
+                                                // Obtener información de la fecha
+                                                $timestamp = strtotime($evento['fecha']);
+                                                $dia_semana = $dias_semana[date('w', $timestamp)];
+                                                $dia = date('j', $timestamp);
+                                                $mes = $meses[date('n', $timestamp)];
+                                                
+                                                echo $dia_semana . ' ' . $dia . ' de ' . $mes;
+                                                ?>
+                                            </div>
+                                        </div>
+                                        
                                     </div>
                                 </div>
-                                
-                            </div>
+                            <?php endforeach; ?>
                         </div>
-                    <?php endforeach; ?>
-                </div>
+                    </div>
+                <?php endif; ?>
             <?php else: ?>
                 <div class="no-events-container">
                     <div class="event-card no-events-card">
@@ -167,11 +257,11 @@ $mensaje_exito = isset($_GET['success']) ? urldecode($_GET['success']) : 'Entrad
         </div>
     </div>
 
-    <!-- Modal para Compra de Anticipada -->
+    <!-- Modal para Gestionar Compra -->
     <div id="compraModal" class="modal <?php echo $mostrar_modal_compra ? 'show' : ''; ?>">
         <div class="modal-content modal-sm">
             <div class="modal-header">
-                <h2>Confirmar Compra</h2>
+                <h2>Gestionar Compra</h2>
                 <button class="close" onclick="closeModal('compraModal')">&times;</button>
             </div>
             
@@ -184,7 +274,7 @@ $mensaje_exito = isset($_GET['success']) ? urldecode($_GET['success']) : 'Entrad
             
             <div class="modal-footer">
                 <a href="?page=catalogo" class="btn btn-danger">Cancelar</a>
-                <a href="<?php echo BASE_URL; ?>methods/sales.php?action=comprar&id_evento=<?php echo $evento_compra ? $evento_compra['id'] : ''; ?>" class="btn btn-primary">Comprar</a>
+                <a href="<?php echo BASE_URL; ?>index.php?page=pago&evento_id=<?php echo $evento_compra ? $evento_compra['id'] : ''; ?>" class="btn btn-primary">Continuar</a>
             </div>
         </div>
     </div>
@@ -211,6 +301,14 @@ $mensaje_exito = isset($_GET['success']) ? urldecode($_GET['success']) : 'Entrad
                         ¡Nos vemos en el evento!
                     </p>
                     <p class="exito-aviso">¡No olvides llevar tu DNI!</p>
+                    <?php 
+                    // Mostrar mensaje sobre el correo si está disponible
+                    if (isset($_GET['correo_enviado']) && $_GET['correo_enviado'] == '0'):
+                    ?>
+                    <div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 12px; margin-top: 15px; color: #856404; font-size: 0.9rem;">
+                        <strong>ℹ️ Nota:</strong> El comprobante por correo no pudo enviarse automáticamente. Tu compra está confirmada y puedes ver tus entradas en tu perfil.
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
             

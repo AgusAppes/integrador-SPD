@@ -6,15 +6,17 @@
         <ul class="sidebar-menu">
             <!-- Sección de Eventos -->
             <li class="sidebar-menu-item" onclick="window.location.href='<?php echo BASE_URL; ?>index.php?page=admin-eventos'">
-                <span class="menu-text">Gestion de ventos</span>
+                <span class="menu-text">Gestión de Eventos</span>
             </li>
             
-            <!-- Futuras secciones -->
-            <li class="sidebar-menu-item disabled">
-                <span class="menu-text">Ventas</span>
+            <!-- Sección de Ventas -->
+            <li class="sidebar-menu-item" onclick="window.location.href='<?php echo BASE_URL; ?>index.php?page=admin-ventas'">
+                <span class="menu-text">Gestión de Ventas</span>
             </li>
-            <li class="sidebar-menu-item disabled">
-                <span class="menu-text">Usuarios</span>
+            
+            <!-- Sección de Usuarios -->
+            <li class="sidebar-menu-item" onclick="window.location.href='<?php echo BASE_URL; ?>index.php?page=admin-usuarios'">
+                <span class="menu-text">Gestión de Usuarios</span>
             </li>
         </ul>
     </nav>

@@ -209,22 +209,46 @@
     margin-top: 30px;
 }
 
-/* Tarjeta de evento */
+/* Tarjeta de evento - Estilo boliche/discoteca */
 .event-card {
-    background: #240046;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #1a0033 0%, #2d0052 50%, #1a0033 100%);
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(157, 78, 221, 0.4), 
+                0 4px 15px rgba(255, 0, 255, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
     overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border: 1px solid #e9ecef;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 2px solid rgba(157, 78, 221, 0.3);
     display: flex;
     flex-direction: column;
     height: 100%;
+    position: relative;
+}
+
+.event-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 0, 255, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+    z-index: 1;
 }
 
 .event-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 15px 40px rgba(157, 78, 221, 0.6), 
+                0 8px 20px rgba(255, 0, 255, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 0, 255, 0.6);
+}
+
+.event-card:hover::before {
+    opacity: 1;
 }
 
 /* Imagen del evento */
@@ -240,11 +264,13 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    filter: brightness(0.9) contrast(1.1);
 }
 
 .event-card:hover .event-image img {
-    transform: scale(1.05);
+    transform: scale(1.1);
+    filter: brightness(1.1) contrast(1.2) saturate(1.2);
 }
 
 /* Overlay del título sobre la imagen */
@@ -253,32 +279,70 @@
     top: 0;
     left: 0;
     right: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(157, 78, 221, 0.3) 40%, transparent 100%);
+    padding: 20px 15px 50px 15px;
     background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
     padding: 20px 15px 40px 15px;
     display: flex;
     align-items: flex-start;
     justify-content: center;
     text-align: center;
+    z-index: 3;
+    backdrop-filter: blur(2px);
 }
 
-/* Overlay del precio en esquina inferior derecha */
+/* Overlay del precio en esquina inferior derecha - Efecto neón */
 .event-price-overlay {
     position: absolute;
-    bottom: 15px;
-    right: 15px;
+    bottom: 20px;
+    right: 20px;
+    z-index: 4;
 }
 
 .price-tag {
-    background: linear-gradient(135deg, #9d4edd, #ff006e);
+    background: linear-gradient(135deg, #ff00ff 0%, #9d4edd 50%, #ff006e 100%);
     color: white;
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-    border: 2px solid rgba(255,255,255,0.2);
-    backdrop-filter: blur(5px);
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-size: 1.3rem;
+    font-weight: 800;
+    text-shadow: 
+        0 0 10px rgba(255, 255, 255, 0.8),
+        0 0 20px rgba(255, 0, 255, 0.6),
+        0 0 30px rgba(157, 78, 221, 0.4),
+        2px 2px 4px rgba(0,0,0,0.5);
+    box-shadow: 
+        0 5px 15px rgba(255, 0, 255, 0.5),
+        0 0 20px rgba(157, 78, 221, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(10px);
+    animation: pulse-glow 2s ease-in-out infinite;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.event-card:hover .price-tag {
+    transform: scale(1.1);
+    box-shadow: 
+        0 8px 25px rgba(255, 0, 255, 0.7),
+        0 0 30px rgba(157, 78, 221, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 
+            0 5px 15px rgba(255, 0, 255, 0.5),
+            0 0 20px rgba(157, 78, 221, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    50% {
+        box-shadow: 
+            0 5px 20px rgba(255, 0, 255, 0.7),
+            0 0 30px rgba(157, 78, 221, 0.6),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
 }
 
 /* Enlace de imagen clickeable */
@@ -289,20 +353,21 @@
     overflow: hidden;
 }
 
-/* Overlay de hover con mensaje */
+/* Overlay de hover con mensaje - Efecto neón */
 .event-hover-overlay {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: radial-gradient(circle, rgba(157, 78, 221, 0.4) 0%, rgba(255, 0, 255, 0.6) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
-    transition: opacity 0.3s ease;
-    z-index: 10;
+    transition: opacity 0.4s ease;
+    z-index: 5;
+    backdrop-filter: blur(3px);
 }
 
 .event-image-link:hover .event-hover-overlay {
@@ -311,23 +376,36 @@
 
 .hover-message {
     color: #ffffff;
-    font-size: 1.3rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 800;
     text-align: center;
     font-family: 'Inter', sans-serif;
-    letter-spacing: 0.5px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-    padding: 15px 25px;
-    border-radius: 30px;
-    box-shadow: 0 5px 20px rgba(157, 78, 221, 0.4);
-    border: 2px solid rgba(255,255,255,0.2);
-    backdrop-filter: blur(5px);
-    transform: scale(0.9);
-    transition: transform 0.2s ease;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-shadow: 
+        0 0 10px rgba(255, 255, 255, 0.8),
+        0 0 20px rgba(255, 0, 255, 0.8),
+        0 0 30px rgba(157, 78, 221, 0.6),
+        2px 2px 4px rgba(0,0,0,0.8);
+    padding: 18px 30px;
+    border-radius: 35px;
+    box-shadow: 
+        0 8px 30px rgba(157, 78, 221, 0.6),
+        0 0 40px rgba(255, 0, 255, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(10px);
+    transform: scale(0.85) rotate(-2deg);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: linear-gradient(135deg, rgba(255, 0, 255, 0.3), rgba(157, 78, 221, 0.3));
 }
 
 .event-image-link:hover .hover-message {
-    transform: scale(1);
+    transform: scale(1) rotate(0deg);
+    box-shadow: 
+        0 10px 40px rgba(157, 78, 221, 0.8),
+        0 0 50px rgba(255, 0, 255, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .no-image {
@@ -343,29 +421,36 @@
 
 /* Contenido de la tarjeta */
 .event-content {
-    padding: 20px;
+    padding: 25px;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
+    background: linear-gradient(180deg, transparent 0%, rgba(26, 0, 51, 0.8) 100%);
+    z-index: 2;
 }
 
 .event-title {
     color: #ffffff;
-    font-size: 1.4rem;
-    font-weight: 700;
+    font-size: 1.6rem;
+    font-weight: 800;
     margin: 0;
     line-height: 1.2;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    text-shadow: 
+        0 0 10px rgba(255, 0, 255, 0.5),
+        0 0 20px rgba(157, 78, 221, 0.3),
+        2px 2px 4px rgba(0,0,0,0.8);
     font-family: 'Inter', sans-serif;
-    letter-spacing: -0.3px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .event-description {
-    color: #6c757d;
-    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1rem;
     font-weight: 400;
     line-height: 1.6;
-    margin: 0 0 15px 0;
+    margin: 15px 0 20px 0;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 
 /* Contenedor de detalles del evento */
@@ -377,19 +462,26 @@
 /* Información del evento */
 .event-date, .event-capacity {
     color: #ffffff;
-    font-size: 1rem;
-    font-weight: 500;
-    margin: 8px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 12px 0;
     display: block;
     text-align: center;
     width: 100%;
+    padding: 12px;
+    background: rgba(255, 0, 255, 0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(157, 78, 221, 0.3);
+    backdrop-filter: blur(5px);
+    text-shadow: 0 0 10px rgba(255, 0, 255, 0.3);
 }
 
 .event-date strong, .event-capacity strong {
-    color: #2c3e50;
+    color: #ff00ff;
     margin-right: 8px;
     min-width: 50px;
     text-align: center;
+    text-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
 }
 
 /* Precios */
@@ -504,6 +596,68 @@
     font-size: 18px;
     margin-top: 16px;
     font-weight: 600;
+}
+
+/* Sección de eventos pasados */
+.past-events-section {
+    margin-top: 60px;
+    padding-top: 40px;
+    border-top: 2px solid rgba(157, 78, 221, 0.3);
+}
+
+.past-events-title {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 30px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.past-events-grid {
+    opacity: 0.6;
+}
+
+.past-event-card {
+    cursor: default;
+    opacity: 0.7;
+}
+
+.past-event-card:hover {
+    transform: none;
+}
+
+.past-event-link {
+    cursor: default;
+    text-decoration: none;
+    pointer-events: auto;
+}
+
+.past-event-card .event-image img {
+    filter: grayscale(0.5) brightness(0.7);
+}
+
+.past-event-card .price-tag {
+    opacity: 0.7;
+    animation: none;
+}
+
+.past-event-card .event-hover-overlay {
+    background: radial-gradient(circle, rgba(128, 128, 128, 0.6) 0%, rgba(64, 64, 64, 0.8) 100%);
+}
+
+.past-event-link:hover .event-hover-overlay {
+    opacity: 1;
+}
+
+.past-event-card .hover-message {
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 
+        0 0 10px rgba(255, 255, 255, 0.5),
+        0 0 20px rgba(128, 128, 128, 0.5),
+        2px 2px 4px rgba(0,0,0,0.8);
+    background: linear-gradient(135deg, rgba(128, 128, 128, 0.4), rgba(64, 64, 64, 0.4));
 }
 
 /* Responsive */

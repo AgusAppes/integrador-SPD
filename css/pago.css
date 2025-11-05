@@ -1,0 +1,266 @@
+/* Estilos para la página de pago */
+
+.main-content {
+    padding-top: 100px;
+    min-height: calc(100vh - 100px);
+    background-color: #000000;
+    color: #fff;
+}
+
+.pago-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.pago-container h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-align: center;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+}
+
+.pago-descripcion {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 40px;
+    font-size: 1rem;
+}
+
+.pago-content {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+/* Resumen de compra */
+.resumen-compra {
+    background: linear-gradient(135deg, rgba(157, 78, 221, 0.2) 0%, rgba(255, 0, 255, 0.1) 100%);
+    border-radius: 16px;
+    padding: 30px;
+    border: 2px solid rgba(157, 78, 221, 0.3);
+    backdrop-filter: blur(10px);
+    height: fit-content;
+}
+
+.resumen-compra h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 25px;
+    color: #FF00FF;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid rgba(255, 0, 255, 0.3);
+    padding-bottom: 15px;
+}
+
+.resumen-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border-left: 3px solid rgba(255, 0, 255, 0.5);
+}
+
+.resumen-item.total {
+    margin-top: 25px;
+    padding: 18px;
+    background: linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(157, 78, 221, 0.2));
+    border-left: 4px solid #FF00FF;
+    font-size: 1.2rem;
+}
+
+.resumen-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.resumen-value {
+    color: #fff;
+    font-weight: 600;
+    text-align: right;
+    font-size: 1rem;
+}
+
+.resumen-item.total .resumen-label {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.resumen-item.total .resumen-value {
+    color: #FF00FF;
+    font-size: 1.5rem;
+    font-weight: 800;
+    text-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
+}
+
+/* Formulario de pago */
+.formulario-pago {
+    background: linear-gradient(135deg, rgba(26, 0, 51, 0.8) 0%, rgba(45, 0, 82, 0.8) 100%);
+    border-radius: 16px;
+    padding: 35px;
+    border: 2px solid rgba(157, 78, 221, 0.3);
+    box-shadow: 0 8px 30px rgba(157, 78, 221, 0.4);
+}
+
+.formulario-pago h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 25px;
+    color: #FF00FF;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid rgba(255, 0, 255, 0.3);
+    padding-bottom: 15px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #fff;
+    font-size: 1rem;
+}
+
+.form-group .required {
+    color: #ff6b6b;
+}
+
+.form-group input[type="text"] {
+    width: 100%;
+    padding: 14px 18px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+}
+
+.form-group input[type="text"]:focus {
+    outline: none;
+    border-color: #FF00FF;
+    background-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 15px rgba(255, 0, 255, 0.3);
+}
+
+.form-group input[type="text"]::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 0;
+}
+
+.form-group .form-text {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+    margin-top: 35px;
+    padding-top: 25px;
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn {
+    padding: 14px 28px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #FF00FF 0%, #9d4edd 100%);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(255, 0, 255, 0.4);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #9d4edd 0%, #FF00FF 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 0, 255, 0.6);
+}
+
+.btn-secondary {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Información de seguridad */
+.seguridad-info {
+    text-align: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.seguridad-info p {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .pago-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .pago-container {
+        padding: 20px 15px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+}
+
