@@ -91,6 +91,7 @@ $entradas = $entradas_resultado['success'] ? $entradas_resultado['data'] : [];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mis Entradas</title>
+    <link rel="icon" type="image/png" href="<?php echo BASE_URL; ?>img/favicon.png">
     
     <!-- Archivos CSS -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/styles.css">

@@ -63,6 +63,7 @@ if (!$datos_usuario) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Perfil</title>
+    <link rel="icon" type="image/png" href="<?php echo BASE_URL; ?>img/favicon.png">
     
     <!-- Archivos CSS -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/styles.css">

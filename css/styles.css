@@ -175,20 +175,26 @@ header nav ul li.user-name-link > a.user-profile-link:hover {
 .dropdown-menu {
   display: none;
   position: absolute;
-  top: 100%;
+  top: calc(100% + 4px);
   right: 0;
   background-color: #2d0a1f;
   min-width: 180px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
   border-radius: 8px;
-  margin-top: 8px;
+  margin-top: 0;
   padding: 8px 0;
   z-index: 1001;
   border: 1px solid rgba(255, 0, 255, 0.2);
+  pointer-events: auto;
 }
 
-.user-dropdown:hover .dropdown-menu {
+.user-dropdown:hover .dropdown-menu,
+.user-dropdown.active .dropdown-menu {
   display: block;
+}
+
+.user-dropdown.active .dropdown-arrow {
+  transform: rotate(180deg);
 }
 
 .dropdown-menu li {
@@ -203,6 +209,9 @@ header nav ul li.user-name-link > a.user-profile-link:hover {
   text-decoration: none;
   font-size: 14px;
   transition: background-color 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  z-index: 1002;
 }
 
 .dropdown-menu li a:hover {

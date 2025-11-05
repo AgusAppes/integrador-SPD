@@ -98,6 +98,46 @@
         document.getElementById('dni').addEventListener('input', function(e) {
             this.value = this.value.replace(/[^0-9]/g, '');
         });
+        
+        // Validación de edad mínima (18 años)
+        function validarEdadMinima(fechaNacimiento) {
+            if (!fechaNacimiento) return false;
+            
+            const fechaNac = new Date(fechaNacimiento);
+            const hoy = new Date();
+            const edad = hoy.getFullYear() - fechaNac.getFullYear();
+            const mes = hoy.getMonth() - fechaNac.getMonth();
+            
+            if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) {
+                return edad - 1 >= 18;
+            }
+            
+            return edad >= 18;
+        }
+        
+        // Validar edad al enviar el formulario
+        document.querySelector('.registro-form').addEventListener('submit', function(e) {
+            const fechaNacInput = document.getElementById('fecha_nac');
+            const fechaNac = fechaNacInput.value;
+            
+            if (fechaNac && !validarEdadMinima(fechaNac)) {
+                e.preventDefault();
+                showToast('Debe ser mayor de 18 años para registrarse', 'error');
+                fechaNacInput.focus();
+                return false;
+            }
+        });
+        
+        // Validar edad al cambiar la fecha
+        document.getElementById('fecha_nac').addEventListener('change', function(e) {
+            const fechaNac = this.value;
+            if (fechaNac && !validarEdadMinima(fechaNac)) {
+                showToast('Debe ser mayor de 18 años para registrarse', 'error');
+                this.setCustomValidity('Debe ser mayor de 18 años');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
     </script>
     
 </body>

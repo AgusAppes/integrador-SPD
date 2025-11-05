@@ -2,8 +2,293 @@
 //configuración de base de datos
 require_once '../config/database.php';
 
+// Cargar configuración de correo si existe
+$email_config_path = __DIR__ . '/../config/email_config.php';
+if (file_exists($email_config_path)) {
+    require_once $email_config_path;
+} else {
+    // Configuración por defecto
+    if (!defined('USE_PHP_MAIL')) {
+        define('USE_PHP_MAIL', true);
+    }
+}
+
 // Header para respuesta JSON (solo para probar en postman - ignorar)
 header('Content-Type: application/json; charset=utf-8');
+
+// Función auxiliar para validar edad mínima (18 años)
+function validar_edad_minima($fecha_nacimiento, $edad_minima = 18) {
+    if (empty($fecha_nacimiento)) {
+        return false;
+    }
+    
+    try {
+        $fecha_nac = new DateTime($fecha_nacimiento);
+        $hoy = new DateTime();
+        $edad = $fecha_nac->diff($hoy)->y;
+        
+        return $edad >= $edad_minima;
+    } catch (Exception $e) {
+        error_log("Error al validar edad: " . $e->getMessage());
+        return false;
+    }
+}
+
+// Función para enviar correo usando SMTP directo (Gmail) - reutilizada de sales.php
+function enviar_correo_smtp($correo_destino, $asunto, $mensaje_html) {
+    // Verificar si hay configuración SMTP
+    if (!defined('EMAIL_SMTP_HOST') || !defined('EMAIL_SMTP_USER') || !defined('EMAIL_SMTP_PASS')) {
+        error_log("SMTP no configurado: Falta email_config.php con credenciales");
+        return false;
+    }
+    
+    try {
+        // Crear conexión SMTP
+        $smtp_host = EMAIL_SMTP_HOST;
+        $smtp_port = defined('EMAIL_SMTP_PORT') ? EMAIL_SMTP_PORT : 587;
+        $smtp_secure = defined('EMAIL_SMTP_SECURE') ? EMAIL_SMTP_SECURE : 'tls';
+        
+        // Abrir conexión
+        $context = stream_context_create([
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            ]
+        ]);
+        
+        $socket = stream_socket_client(
+            ($smtp_secure === 'ssl' ? 'ssl://' : '') . $smtp_host . ':' . $smtp_port,
+            $errno,
+            $errstr,
+            30,
+            STREAM_CLIENT_CONNECT,
+            $context
+        );
+        
+        if (!$socket) {
+            error_log("Error conectando a SMTP: $errstr ($errno)");
+            return false;
+        }
+        
+        // Leer respuesta inicial
+        fgets($socket, 515);
+        
+        // EHLO
+        fputs($socket, "EHLO " . EMAIL_SMTP_HOST . "\r\n");
+        fgets($socket, 515);
+        
+        // STARTTLS si es necesario
+        if ($smtp_secure === 'tls') {
+            fputs($socket, "STARTTLS\r\n");
+            fgets($socket, 515);
+            stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+            fputs($socket, "EHLO " . EMAIL_SMTP_HOST . "\r\n");
+            fgets($socket, 515);
+        }
+        
+        // Autenticación
+        fputs($socket, "AUTH LOGIN\r\n");
+        fgets($socket, 515);
+        
+        fputs($socket, base64_encode(EMAIL_SMTP_USER) . "\r\n");
+        fgets($socket, 515);
+        
+        fputs($socket, base64_encode(EMAIL_SMTP_PASS) . "\r\n");
+        $response = fgets($socket, 515);
+        
+        if (strpos($response, '235') === false) {
+            error_log("Error de autenticación SMTP");
+            fclose($socket);
+            return false;
+        }
+        
+        // FROM
+        $from_email = defined('EMAIL_FROM_ADDRESS') ? EMAIL_FROM_ADDRESS : EMAIL_SMTP_USER;
+        $from_name = defined('EMAIL_FROM_NAME') ? EMAIL_FROM_NAME : 'Malpa Eventos';
+        fputs($socket, "MAIL FROM: <" . $from_email . ">\r\n");
+        fgets($socket, 515);
+        
+        // TO
+        fputs($socket, "RCPT TO: <" . $correo_destino . ">\r\n");
+        fgets($socket, 515);
+        
+        // DATA
+        fputs($socket, "DATA\r\n");
+        fgets($socket, 515);
+        
+        // Headers
+        $headers = "From: " . $from_name . " <" . $from_email . ">\r\n";
+        $headers .= "To: <" . $correo_destino . ">\r\n";
+        $headers .= "Subject: =?UTF-8?B?" . base64_encode($asunto) . "?=\r\n";
+        $headers .= "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $headers .= "Content-Transfer-Encoding: base64\r\n";
+        
+        fputs($socket, $headers . "\r\n");
+        fputs($socket, chunk_split(base64_encode($mensaje_html)) . "\r\n");
+        fputs($socket, ".\r\n");
+        
+        $response = fgets($socket, 515);
+        
+        // QUIT
+        fputs($socket, "QUIT\r\n");
+        fclose($socket);
+        
+        if (strpos($response, '250') !== false) {
+            error_log("✓ Correo enviado exitosamente vía SMTP a: " . $correo_destino);
+            return true;
+        } else {
+            error_log("✗ Error enviando correo vía SMTP: " . $response);
+            return false;
+        }
+        
+    } catch (Exception $e) {
+        error_log("Excepción en enviar_correo_smtp: " . $e->getMessage());
+        return false;
+    }
+}
+
+// Función para enviar email de bienvenida al registrarse
+function enviar_email_bienvenida($usuario) {
+    try {
+        // Asegurar que BASE_URL esté definido
+        if (!defined('BASE_URL')) {
+            require_once __DIR__ . '/../config/config.php';
+        }
+        
+        $correo_destino = $usuario['correo'];
+        $nombre_completo = trim($usuario['nombre'] . ' ' . $usuario['apellido']);
+        
+        $asunto = '¡Bienvenido a Malpa Eventos!';
+        
+        $mensaje_html = '
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f4f4;
+                    margin: 0;
+                    padding: 20px;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background-color: #ffffff;
+                    border-radius: 10px;
+                    overflow: hidden;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }
+                .header {
+                    background: linear-gradient(135deg, #1a0033 0%, #2d0052 50%, #1a0033 100%);
+                    color: #ffffff;
+                    padding: 30px;
+                    text-align: center;
+                }
+                .header h1 {
+                    margin: 0;
+                    font-size: 28px;
+                }
+                .content {
+                    padding: 30px;
+                }
+                .welcome-message {
+                    font-size: 18px;
+                    color: #333333;
+                    margin-bottom: 20px;
+                }
+                .info-box {
+                    background-color: #f8f9fa;
+                    border-left: 4px solid #5f0f40;
+                    padding: 15px;
+                    margin: 20px 0;
+                    border-radius: 4px;
+                }
+                .info-box p {
+                    margin: 5px 0;
+                    color: #495057;
+                }
+                .footer {
+                    background-color: #f8f9fa;
+                    padding: 20px;
+                    text-align: center;
+                    color: #6c757d;
+                    font-size: 14px;
+                }
+                .button {
+                    display: inline-block;
+                    background-color: #5f0f40;
+                    color: #ffffff;
+                    padding: 12px 30px;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    margin: 20px 0;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>¡Bienvenido a Malpa Eventos!</h1>
+                </div>
+                <div class="content">
+                    <p class="welcome-message">Hola <strong>' . htmlspecialchars($nombre_completo) . '</strong>,</p>
+                    <p>¡Gracias por registrarte en nuestro sistema de gestión de eventos!</p>
+                    <p>Tu cuenta ha sido creada exitosamente. Ahora puedes:</p>
+                    <ul>
+                        <li>Ver y comprar entradas para nuestros eventos</li>
+                        <li>Gestionar tu perfil</li>
+                        <li>Recibir comprobantes de compra por email</li>
+                    </ul>
+                    <div class="info-box">
+                        <p><strong>Datos de tu cuenta:</strong></p>
+                        <p>DNI: ' . htmlspecialchars($usuario['dni']) . '</p>
+                        <p>Correo: ' . htmlspecialchars($correo_destino) . '</p>
+                    </div>
+                    <div style="text-align: center;">
+                        <a href="' . BASE_URL . 'index.php?page=catalogo" class="button">Ver Eventos Disponibles</a>
+                    </div>
+                    <p style="margin-top: 30px; color: #6c757d;">
+                        Si tienes alguna pregunta, no dudes en contactarnos.
+                    </p>
+                </div>
+                <div class="footer">
+                    <p>© ' . date('Y') . ' Malpa Eventos. Todos los derechos reservados.</p>
+                    <p>Este es un correo automático, por favor no respondas.</p>
+                </div>
+            </div>
+        </body>
+        </html>';
+        
+        // Intentar enviar correo
+        if (defined('USE_PHP_MAIL') && USE_PHP_MAIL === true) {
+            // Usar mail() estándar
+            $headers = "MIME-Version: 1.0\r\n";
+            $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+            $from_email = defined('EMAIL_FROM_ADDRESS') ? EMAIL_FROM_ADDRESS : 'noreply@malpaeventos.com';
+            $from_name = defined('EMAIL_FROM_NAME') ? EMAIL_FROM_NAME : 'Malpa Eventos';
+            $headers .= "From: " . $from_name . " <" . $from_email . ">\r\n";
+            
+            $resultado = mail($correo_destino, $asunto, $mensaje_html, $headers);
+            if ($resultado) {
+                error_log("✓ Email de bienvenida enviado con mail() a: " . $correo_destino);
+                return true;
+            }
+        }
+        
+        // Intentar enviar con SMTP
+        $envio_exitoso = enviar_correo_smtp($correo_destino, $asunto, $mensaje_html);
+        return $envio_exitoso;
+        
+    } catch (Exception $e) {
+        error_log("Excepción al enviar email de bienvenida: " . $e->getMessage());
+        return false;
+    }
+}
 
 // Función para crear un nuevo usuario
 function crear_usuario($datos) {
@@ -38,6 +323,17 @@ function crear_usuario($datos) {
                 'message' => 'El formato del correo electrónico no es válido',
                 'data' => null
             ];
+        }
+        
+        // Validar edad mínima (18 años)
+        if (isset($datos['fecha_nac']) && !empty($datos['fecha_nac'])) {
+            if (!validar_edad_minima($datos['fecha_nac'], 18)) {
+                return [
+                    'success' => false,
+                    'message' => 'Debe ser mayor de 18 años para registrarse',
+                    'data' => null
+                ];
+            }
         }
         
         // Validar longitud de contraseña
@@ -105,16 +401,30 @@ function crear_usuario($datos) {
         
         if ($resultado) {
             $usuario_id = $conexion->lastInsertId();
+            
+            // Preparar datos del usuario para el email
+            $usuario_email = [
+                'id' => $usuario_id,
+                'dni' => $datos['dni'],
+                'nombre' => trim($datos['nombre']),
+                'apellido' => trim($datos['apellido']),
+                'correo' => trim($datos['correo'])
+            ];
+            
+            // Intentar enviar email de bienvenida (no bloquea el registro si falla)
+            try {
+                $email_enviado = enviar_email_bienvenida($usuario_email);
+                if (!$email_enviado) {
+                    error_log("ADVERTENCIA: No se pudo enviar el email de bienvenida al usuario ID: " . $usuario_id . " Email: " . $usuario_email['correo']);
+                }
+            } catch (Exception $e) {
+                error_log("Error al enviar email de bienvenida (no crítico): " . $e->getMessage());
+            }
+            
             return [
                 'success' => true,
                 'message' => 'Usuario registrado exitosamente',
-                'data' => [
-                    'id' => $usuario_id,
-                    'dni' => $datos['dni'],
-                    'nombre' => trim($datos['nombre']),
-                    'apellido' => trim($datos['apellido']),
-                    'correo' => trim($datos['correo'])
-                ]
+                'data' => $usuario_email
             ];
         } else {
             return [
@@ -529,6 +839,17 @@ function actualizar_usuario($datos) {
                 'message' => 'El formato del correo electrónico no es válido',
                 'data' => null
             ];
+        }
+        
+        // Validar edad mínima (18 años)
+        if (isset($datos['fecha_nac']) && !empty($datos['fecha_nac'])) {
+            if (!validar_edad_minima($datos['fecha_nac'], 18)) {
+                return [
+                    'success' => false,
+                    'message' => 'Debe ser mayor de 18 años para registrarse',
+                    'data' => null
+                ];
+            }
         }
         
         // Verificar si el DNI ya existe en otro usuario

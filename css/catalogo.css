@@ -629,9 +629,9 @@
 }
 
 .past-event-link {
-    cursor: default;
+    cursor: not-allowed;
     text-decoration: none;
-    pointer-events: auto;
+    pointer-events: none;
 }
 
 .past-event-card .event-image img {

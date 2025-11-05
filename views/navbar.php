@@ -43,11 +43,11 @@ if ($usuario_logueado) {
                 <li><a href="<?php echo BASE_URL; ?>index.php?page=home#container-contacto">Contacto</a></li>
                 <li><a href="<?php echo BASE_URL; ?>index.php?page=catalogo">Eventos</a></li>
                 <li class="user-dropdown">
-                    <a href="#" class="user-profile-link" id="username-nav-link">
+                    <a href="javascript:void(0);" class="user-profile-link" id="username-nav-link">
                         <?php echo htmlspecialchars($nombre_completo ?: $nombre_usuario); ?>
                         <span class="dropdown-arrow">▼</span>
                     </a>
-                    <ul class="dropdown-menu">
+                    <ul class="dropdown-menu" id="user-dropdown-menu">
                         <li><a href="<?php echo BASE_URL; ?>index.php?page=perfil">Mi Perfil</a></li>
                         <li><a href="<?php echo BASE_URL; ?>index.php?page=mis-entradas">Mis Entradas</a></li>
                         <li><a href="<?php echo BASE_URL; ?>methods/users.php?action=logout" class="logout-link">Cerrar Sesión</a></li>
@@ -58,4 +58,36 @@ if ($usuario_logueado) {
         </ul>
     </nav>
 </header>
+
+<script>
+// Manejar el menú desplegable del usuario
+(function() {
+    const usernameLink = document.getElementById('username-nav-link');
+    const dropdown = document.querySelector('.user-dropdown');
+    const dropdownMenu = document.getElementById('user-dropdown-menu');
+    
+    if (usernameLink && dropdown) {
+        // Toggle del menú al hacer click
+        usernameLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropdown.classList.toggle('active');
+        });
+        
+        // Cerrar el menú al hacer click fuera
+        document.addEventListener('click', function(e) {
+            if (dropdown && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+        
+        // Prevenir que el menú se cierre al hacer click dentro de él
+        if (dropdownMenu) {
+            dropdownMenu.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
+    }
+})();
+</script>
 

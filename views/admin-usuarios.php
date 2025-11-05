@@ -3,9 +3,44 @@
 require_once 'config/database.php';
 
 // ==========================
-// Función: listar_usuarios($filtros = [])
+// Función: contar_usuarios($filtros = [])
 // ==========================
-function listar_usuarios($filtros = []) {
+function contar_usuarios($filtros = []) {
+    try {
+        $conexion = db_connection();
+        
+        $sql = "SELECT COUNT(*) as total
+                FROM usuarios u
+                LEFT JOIN roles r ON u.id_rol = r.id";
+        
+        $where_conditions = [];
+        $params = [];
+        
+        // Aplicar los mismos filtros que en listar_usuarios
+        if (!empty($filtros['id_rol']) && is_numeric($filtros['id_rol'])) {
+            $where_conditions[] = "u.id_rol = ?";
+            $params[] = intval($filtros['id_rol']);
+        }
+        
+        if (!empty($where_conditions)) {
+            $sql .= " WHERE " . implode(" AND ", $where_conditions);
+        }
+        
+        $stmt = $conexion->prepare($sql);
+        $stmt->execute($params);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return intval($result['total']);
+    } catch (PDOException $e) {
+        error_log("Error en contar_usuarios: " . $e->getMessage());
+        return 0;
+    }
+}
+
+// ==========================
+// Función: listar_usuarios($filtros = [], $limit = null, $offset = 0)
+// ==========================
+function listar_usuarios($filtros = [], $limit = null, $offset = 0) {
     try {
         $conexion = db_connection();
         
@@ -30,6 +65,13 @@ function listar_usuarios($filtros = []) {
         
         // Agregar ORDER BY
         $sql .= " ORDER BY u.nombre ASC, u.apellido ASC";
+        
+        // Agregar LIMIT y OFFSET si se especifican
+        if ($limit !== null && $limit > 0) {
+            $sql .= " LIMIT ? OFFSET ?";
+            $params[] = intval($limit);
+            $params[] = intval($offset);
+        }
         
         $stmt = $conexion->prepare($sql);
         $stmt->execute($params);
@@ -145,8 +187,17 @@ $filtros = [
 $roles_resultado = obtener_roles();
 $roles = $roles_resultado['success'] ? $roles_resultado['data'] : [];
 
-// Obtener usuarios con filtros aplicados
-$usuarios_resultado = listar_usuarios($filtros);
+// Configuración de paginación
+$registros_por_pagina = 5;
+$pagina_actual = isset($_GET['pagina']) && is_numeric($_GET['pagina']) && $_GET['pagina'] > 0 ? intval($_GET['pagina']) : 1;
+$offset = ($pagina_actual - 1) * $registros_por_pagina;
+
+// Contar total de usuarios (antes de paginar)
+$total_usuarios = contar_usuarios($filtros);
+$total_paginas = ceil($total_usuarios / $registros_por_pagina);
+
+// Obtener usuarios con filtros y paginación aplicados
+$usuarios_resultado = listar_usuarios($filtros, $registros_por_pagina, $offset);
 // Si la consulta fue exitosa, asignar los datos, si no, un arreglo vacío
 $usuarios = $usuarios_resultado['success'] ? $usuarios_resultado['data'] : [];
 
@@ -184,6 +235,7 @@ if (isset($_GET['crear'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Gestión de Usuarios</title>
+    <link rel="icon" type="image/png" href="<?php echo BASE_URL; ?>img/favicon.png">
 
     <!-- Archivos CSS -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/styles.css">
@@ -202,8 +254,14 @@ if (isset($_GET['crear'])) {
     
     <!-- Contenido principal -->
     <div class="main-content">
-        <div class="admin-panel">
-            <h1>Gestión de Usuarios</h1>
+        <div class="admin-container">
+            <!-- Barra lateral -->
+            <?php include 'sidebar.php'; ?>
+            
+            <!-- Contenido central -->
+            <div class="admin-main-content">
+                <div class="admin-panel">
+                    <h1>Gestión de Usuarios</h1>
 
             <!-- Filtros de búsqueda -->
             <div class="filtros-container">
@@ -211,6 +269,8 @@ if (isset($_GET['crear'])) {
                 <form method="GET" action="<?php echo BASE_URL; ?>index.php" class="filtros-form">
                     <!-- Preservar parámetro page -->
                     <input type="hidden" name="page" value="admin-usuarios">
+                    <!-- Resetear a página 1 cuando se aplican filtros -->
+                    <input type="hidden" name="pagina" value="1">
                     <?php if (isset($_GET['edit'])): ?>
                         <input type="hidden" name="edit" value="<?php echo htmlspecialchars($_GET['edit']); ?>">
                     <?php endif; ?>
@@ -313,7 +373,110 @@ if (isset($_GET['crear'])) {
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
+                        
+                        <!-- Controles de paginación -->
+                        <?php if ($total_paginas > 1): ?>
+                            <div class="pagination-container">
+                                <div class="pagination-info">
+                                    <span>
+                                        Mostrando <?php echo $usuarios ? count($usuarios) : 0; ?> de <?php echo $total_usuarios; ?> usuarios
+                                        (Página <?php echo $pagina_actual; ?> de <?php echo $total_paginas; ?>)
+                                    </span>
+                                </div>
+                                <div class="pagination-controls">
+                                    <?php
+                                    // Función auxiliar para construir URL con filtros y página
+                                    function construir_url_paginacion_usuarios($pagina, $filtros_actuales) {
+                                        $params = ['page' => 'admin-usuarios', 'pagina' => $pagina];
+                                        
+                                        if (!empty($filtros_actuales['id_rol'])) {
+                                            $params['filtro_rol'] = $filtros_actuales['id_rol'];
+                                        }
+                                        
+                                        return BASE_URL . 'index.php?' . http_build_query($params);
+                                    }
+                                    
+                                    // Botón Anterior
+                                    if ($pagina_actual > 1): 
+                                        $url_anterior = construir_url_paginacion_usuarios($pagina_actual - 1, $filtros);
+                                    ?>
+                                        <a href="<?php echo $url_anterior; ?>" class="pagination-btn pagination-btn-prev">
+                                            ‹ Anterior
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="pagination-btn pagination-btn-disabled">‹ Anterior</span>
+                                    <?php endif; ?>
+                                    
+                                    <!-- Números de página -->
+                                    <div class="pagination-numbers">
+                                        <?php
+                                        // Mostrar páginas alrededor de la página actual
+                                        $paginas_a_mostrar = [];
+                                        $rango = 2; // Número de páginas a mostrar a cada lado
+                                        
+                                        $inicio = max(1, $pagina_actual - $rango);
+                                        $fin = min($total_paginas, $pagina_actual + $rango);
+                                        
+                                        // Agregar primera página si no está en el rango
+                                        if ($inicio > 1) {
+                                            $paginas_a_mostrar[] = 1;
+                                            if ($inicio > 2) {
+                                                $paginas_a_mostrar[] = '...';
+                                            }
+                                        }
+                                        
+                                        // Agregar páginas del rango
+                                        for ($i = $inicio; $i <= $fin; $i++) {
+                                            $paginas_a_mostrar[] = $i;
+                                        }
+                                        
+                                        // Agregar última página si no está en el rango
+                                        if ($fin < $total_paginas) {
+                                            if ($fin < $total_paginas - 1) {
+                                                $paginas_a_mostrar[] = '...';
+                                            }
+                                            $paginas_a_mostrar[] = $total_paginas;
+                                        }
+                                        
+                                        foreach ($paginas_a_mostrar as $num_pagina):
+                                            if ($num_pagina === '...'):
+                                        ?>
+                                            <span class="pagination-dots">...</span>
+                                        <?php
+                                            else:
+                                                $url_pagina = construir_url_paginacion_usuarios($num_pagina, $filtros);
+                                                $clase_activa = ($num_pagina == $pagina_actual) ? 'pagination-btn-active' : '';
+                                        ?>
+                                            <a href="<?php echo $url_pagina; ?>" 
+                                               class="pagination-btn pagination-btn-number <?php echo $clase_activa; ?>">
+                                                <?php echo $num_pagina; ?>
+                                            </a>
+                                        <?php
+                                            endif;
+                                        endforeach;
+                                        ?>
+                                    </div>
+                                    
+                                    <!-- Botón Siguiente -->
+                                    <?php if ($pagina_actual < $total_paginas): 
+                                        $url_siguiente = construir_url_paginacion_usuarios($pagina_actual + 1, $filtros);
+                                    ?>
+                                        <a href="<?php echo $url_siguiente; ?>" class="pagination-btn pagination-btn-next">
+                                            Siguiente ›
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="pagination-btn pagination-btn-disabled">Siguiente ›</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php elseif ($total_usuarios > 0): ?>
+                            <div class="pagination-info">
+                                <span>Total: <?php echo $total_usuarios; ?> usuario(s)</span>
+                            </div>
+                        <?php endif; ?>
                     <?php endif; ?>
+                </div>
+            </div>
                 </div>
             </div>
         </div>
@@ -447,6 +610,54 @@ if (isset($_GET['crear'])) {
         <?php if (isset($_GET['error'])): ?>
             showToast('<?php echo htmlspecialchars(urldecode($_GET['error']), ENT_QUOTES, 'UTF-8'); ?>', 'error');
         <?php endif; ?>
+        
+        // Validación de edad mínima (18 años)
+        function validarEdadMinima(fechaNacimiento) {
+            if (!fechaNacimiento) return false;
+            
+            const fechaNac = new Date(fechaNacimiento);
+            const hoy = new Date();
+            const edad = hoy.getFullYear() - fechaNac.getFullYear();
+            const mes = hoy.getMonth() - fechaNac.getMonth();
+            
+            if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) {
+                return edad - 1 >= 18;
+            }
+            
+            return edad >= 18;
+        }
+        
+        // Validar edad al enviar el formulario de usuario
+        const editUserForm = document.getElementById('editUserForm');
+        if (editUserForm) {
+            editUserForm.addEventListener('submit', function(e) {
+                const fechaNacInput = document.getElementById('edit_fecha_nac');
+                if (fechaNacInput) {
+                    const fechaNac = fechaNacInput.value;
+                    
+                    if (fechaNac && !validarEdadMinima(fechaNac)) {
+                        e.preventDefault();
+                        showToast('Debe ser mayor de 18 años para registrarse', 'error');
+                        fechaNacInput.focus();
+                        return false;
+                    }
+                }
+            });
+            
+            // Validar edad al cambiar la fecha
+            const fechaNacInput = document.getElementById('edit_fecha_nac');
+            if (fechaNacInput) {
+                fechaNacInput.addEventListener('change', function(e) {
+                    const fechaNac = this.value;
+                    if (fechaNac && !validarEdadMinima(fechaNac)) {
+                        showToast('Debe ser mayor de 18 años para registrarse', 'error');
+                        this.setCustomValidity('Debe ser mayor de 18 años');
+                    } else {
+                        this.setCustomValidity('');
+                    }
+                });
+            }
+        }
     </script>
 </body>
 </html>

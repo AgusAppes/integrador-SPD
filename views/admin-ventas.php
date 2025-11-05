@@ -3,9 +3,71 @@
 require_once 'config/database.php';
 
 // ==========================
-// Función: listar_ventas($filtros = [])
+// Función: contar_ventas($filtros = [])
 // ==========================
-function listar_ventas($filtros = []) {
+function contar_ventas($filtros = []) {
+    try {
+        $conexion = db_connection();
+        
+        // Construir la consulta SQL base para contar ventas únicas
+        $sql = "SELECT COUNT(DISTINCT v.id) as total
+                FROM ventas v
+                INNER JOIN usuarios u ON v.id_usuario = u.id
+                INNER JOIN detalle_venta dv ON v.id = dv.id_venta
+                INNER JOIN entradas ent ON dv.id_entrada = ent.id
+                INNER JOIN eventos e ON ent.id_evento = e.id
+                INNER JOIN estados est ON ent.id_estado = est.id";
+        
+        $where_conditions = [];
+        $params = [];
+        
+        // Aplicar los mismos filtros que en listar_ventas
+        if (!empty($filtros['id_venta'])) {
+            $where_conditions[] = "v.id = ?";
+            $params[] = intval($filtros['id_venta']);
+        }
+        
+        if (!empty($filtros['nombre_usuario'])) {
+            $where_conditions[] = "(u.nombre LIKE ? OR u.apellido LIKE ? OR CONCAT(u.nombre, ' ', u.apellido) LIKE ?)";
+            $nombre_busqueda = '%' . $filtros['nombre_usuario'] . '%';
+            $params[] = $nombre_busqueda;
+            $params[] = $nombre_busqueda;
+            $params[] = $nombre_busqueda;
+        }
+        
+        if (!empty($filtros['fecha_desde'])) {
+            $where_conditions[] = "DATE(v.fecha_venta) >= ?";
+            $params[] = $filtros['fecha_desde'];
+        }
+        if (!empty($filtros['fecha_hasta'])) {
+            $where_conditions[] = "DATE(v.fecha_venta) <= ?";
+            $params[] = $filtros['fecha_hasta'];
+        }
+        
+        if (!empty($filtros['estado']) && $filtros['estado'] != 'todos') {
+            $where_conditions[] = "ent.id_estado = ?";
+            $params[] = intval($filtros['estado']);
+        }
+        
+        if (!empty($where_conditions)) {
+            $sql .= " WHERE " . implode(" AND ", $where_conditions);
+        }
+        
+        $stmt = $conexion->prepare($sql);
+        $stmt->execute($params);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return intval($result['total']);
+    } catch (PDOException $e) {
+        error_log("Error en contar_ventas: " . $e->getMessage());
+        return 0;
+    }
+}
+
+// ==========================
+// Función: listar_ventas($filtros = [], $limit = null, $offset = 0)
+// ==========================
+function listar_ventas($filtros = [], $limit = null, $offset = 0) {
     try {
         // Crear conexión a la base de datos
         $conexion = db_connection();
@@ -74,6 +136,13 @@ function listar_ventas($filtros = []) {
         
         // Agregar ORDER BY
         $sql .= " ORDER BY v.fecha_venta DESC";
+        
+        // Agregar LIMIT y OFFSET si se especifican
+        if ($limit !== null && $limit > 0) {
+            $sql .= " LIMIT ? OFFSET ?";
+            $params[] = intval($limit);
+            $params[] = intval($offset);
+        }
 
         // Preparar y ejecutar la consulta
         $stmt = $conexion->prepare($sql);
@@ -278,8 +347,17 @@ $filtros = [
     'estado' => isset($_GET['filtro_estado']) ? trim($_GET['filtro_estado']) : ''
 ];
 
-// Obtener ventas con filtros aplicados
-$ventas_resultado = listar_ventas($filtros);
+// Configuración de paginación
+$registros_por_pagina = 5;
+$pagina_actual = isset($_GET['pagina']) && is_numeric($_GET['pagina']) && $_GET['pagina'] > 0 ? intval($_GET['pagina']) : 1;
+$offset = ($pagina_actual - 1) * $registros_por_pagina;
+
+// Contar total de ventas (antes de paginar)
+$total_ventas = contar_ventas($filtros);
+$total_paginas = ceil($total_ventas / $registros_por_pagina);
+
+// Obtener ventas con filtros y paginación aplicados
+$ventas_resultado = listar_ventas($filtros, $registros_por_pagina, $offset);
 $ventas = $ventas_resultado['success'] ? $ventas_resultado['data'] : [];
 
 // ==============================
@@ -308,6 +386,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Gestión de Ventas</title>
+    <link rel="icon" type="image/png" href="<?php echo BASE_URL; ?>img/favicon.png">
 
     <!-- Archivos CSS -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/styles.css">
@@ -325,8 +404,14 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
 
     <!-- Contenido principal -->
     <div class="main-content">
-        <div class="admin-panel">
-            <h1>Gestión de Ventas</h1>
+        <div class="admin-container">
+            <!-- Barra lateral -->
+            <?php include 'sidebar.php'; ?>
+            
+            <!-- Contenido central -->
+            <div class="admin-main-content">
+                <div class="admin-panel">
+                    <h1>Gestión de Ventas</h1>
 
             <!-- Filtros de búsqueda -->
             <div class="filtros-container">
@@ -334,6 +419,8 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                 <form method="GET" action="<?php echo BASE_URL; ?>index.php" class="filtros-form">
                     <!-- Preservar parámetro page -->
                     <input type="hidden" name="page" value="admin-ventas">
+                    <!-- Resetear a página 1 cuando se aplican filtros -->
+                    <input type="hidden" name="pagina" value="1">
                     <?php if (isset($_GET['edit'])): ?>
                         <input type="hidden" name="edit" value="<?php echo htmlspecialchars($_GET['edit']); ?>">
                     <?php endif; ?>
@@ -495,7 +582,122 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
+                        
+                        <!-- Controles de paginación -->
+                        <?php if ($total_paginas > 1): ?>
+                            <div class="pagination-container">
+                                <div class="pagination-info">
+                                    <span>
+                                        Mostrando <?php echo $ventas ? count($ventas) : 0; ?> de <?php echo $total_ventas; ?> ventas
+                                        (Página <?php echo $pagina_actual; ?> de <?php echo $total_paginas; ?>)
+                                    </span>
+                                </div>
+                                <div class="pagination-controls">
+                                    <?php
+                                    // Función auxiliar para construir URL con filtros y página
+                                    function construir_url_paginacion($pagina, $filtros_actuales) {
+                                        $params = ['page' => 'admin-ventas', 'pagina' => $pagina];
+                                        
+                                        if (!empty($filtros_actuales['id_venta'])) {
+                                            $params['filtro_id'] = $filtros_actuales['id_venta'];
+                                        }
+                                        if (!empty($filtros_actuales['nombre_usuario'])) {
+                                            $params['filtro_usuario'] = $filtros_actuales['nombre_usuario'];
+                                        }
+                                        if (!empty($filtros_actuales['fecha_desde'])) {
+                                            $params['filtro_fecha_desde'] = $filtros_actuales['fecha_desde'];
+                                        }
+                                        if (!empty($filtros_actuales['fecha_hasta'])) {
+                                            $params['filtro_fecha_hasta'] = $filtros_actuales['fecha_hasta'];
+                                        }
+                                        if (!empty($filtros_actuales['estado']) && $filtros_actuales['estado'] != 'todos') {
+                                            $params['filtro_estado'] = $filtros_actuales['estado'];
+                                        }
+                                        
+                                        return BASE_URL . 'index.php?' . http_build_query($params);
+                                    }
+                                    
+                                    // Botón Anterior
+                                    if ($pagina_actual > 1): 
+                                        $url_anterior = construir_url_paginacion($pagina_actual - 1, $filtros);
+                                    ?>
+                                        <a href="<?php echo $url_anterior; ?>" class="pagination-btn pagination-btn-prev">
+                                            ‹ Anterior
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="pagination-btn pagination-btn-disabled">‹ Anterior</span>
+                                    <?php endif; ?>
+                                    
+                                    <!-- Números de página -->
+                                    <div class="pagination-numbers">
+                                        <?php
+                                        // Mostrar páginas alrededor de la página actual
+                                        $paginas_a_mostrar = [];
+                                        $rango = 2; // Número de páginas a mostrar a cada lado
+                                        
+                                        $inicio = max(1, $pagina_actual - $rango);
+                                        $fin = min($total_paginas, $pagina_actual + $rango);
+                                        
+                                        // Agregar primera página si no está en el rango
+                                        if ($inicio > 1) {
+                                            $paginas_a_mostrar[] = 1;
+                                            if ($inicio > 2) {
+                                                $paginas_a_mostrar[] = '...';
+                                            }
+                                        }
+                                        
+                                        // Agregar páginas del rango
+                                        for ($i = $inicio; $i <= $fin; $i++) {
+                                            $paginas_a_mostrar[] = $i;
+                                        }
+                                        
+                                        // Agregar última página si no está en el rango
+                                        if ($fin < $total_paginas) {
+                                            if ($fin < $total_paginas - 1) {
+                                                $paginas_a_mostrar[] = '...';
+                                            }
+                                            $paginas_a_mostrar[] = $total_paginas;
+                                        }
+                                        
+                                        foreach ($paginas_a_mostrar as $num_pagina):
+                                            if ($num_pagina === '...'):
+                                        ?>
+                                            <span class="pagination-dots">...</span>
+                                        <?php
+                                            else:
+                                                $url_pagina = construir_url_paginacion($num_pagina, $filtros);
+                                                $clase_activa = ($num_pagina == $pagina_actual) ? 'pagination-btn-active' : '';
+                                        ?>
+                                            <a href="<?php echo $url_pagina; ?>" 
+                                               class="pagination-btn pagination-btn-number <?php echo $clase_activa; ?>">
+                                                <?php echo $num_pagina; ?>
+                                            </a>
+                                        <?php
+                                            endif;
+                                        endforeach;
+                                        ?>
+                                    </div>
+                                    
+                                    <!-- Botón Siguiente -->
+                                    <?php if ($pagina_actual < $total_paginas): 
+                                        $url_siguiente = construir_url_paginacion($pagina_actual + 1, $filtros);
+                                    ?>
+                                        <a href="<?php echo $url_siguiente; ?>" class="pagination-btn pagination-btn-next">
+                                            Siguiente ›
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="pagination-btn pagination-btn-disabled">Siguiente ›</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php elseif ($total_ventas > 0): ?>
+                            <div class="pagination-info">
+                                <span>Total: <?php echo $total_ventas; ?> venta(s)</span>
+                            </div>
+                        <?php endif; ?>
                     <?php endif; ?>
+                </div>
+            </div>
                 </div>
             </div>
         </div>

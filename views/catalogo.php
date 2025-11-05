@@ -9,7 +9,6 @@ function listar_eventos() {
         
         $sql = "SELECT id, nombre, descripcion, fecha, cupo_total, cantidad_anticipadas, precio_anticipadas, precio_en_puerta, banner 
                 FROM eventos 
-                WHERE fecha >= NOW()
                 ORDER BY fecha ASC";
         
         $stmt = $conexion->prepare($sql);

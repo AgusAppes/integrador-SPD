@@ -2,6 +2,24 @@
 // Incluir configuraciones de base de datos
 require_once __DIR__ . '/../config/database.php';
 
+// Función auxiliar para validar edad mínima (18 años)
+function validar_edad_minima_recepcion($fecha_nacimiento, $edad_minima = 18) {
+    if (empty($fecha_nacimiento)) {
+        return false;
+    }
+    
+    try {
+        $fecha_nac = new DateTime($fecha_nacimiento);
+        $hoy = new DateTime();
+        $edad = $fecha_nac->diff($hoy)->y;
+        
+        return $edad >= $edad_minima;
+    } catch (Exception $e) {
+        error_log("Error al validar edad en recepción: " . $e->getMessage());
+        return false;
+    }
+}
+
 // Función para procesar el escaneo de DNI
 function processDNIScan($dniData, $eventId = null) {
     try {
@@ -56,6 +74,16 @@ function processDNIScan($dniData, $eventId = null) {
                     'ticket' => $ticketInfo
                 ];
             } else {
+                // Verificar si fue por edad
+                $userData = extractUserDataFromBarcode($dniData);
+                $fechaNac = $userData['fecha_nac'] ?? null;
+                if ($fechaNac && !validar_edad_minima_recepcion($fechaNac, 18)) {
+                    return [
+                        'success' => false,
+                        'message' => 'No se puede registrar: debe ser mayor de 18 años'
+                    ];
+                }
+                
                 return [
                     'success' => false,
                     'message' => 'Error al crear el usuario'
@@ -229,6 +257,13 @@ function createUserFromDNI($dni, $barcodeData) {
         $nombre = $userData['nombre'] ?? 'Usuario';
         $apellido = $userData['apellido'] ?? 'Sin Apellido';
         $fechaNac = $userData['fecha_nac'] ?? '1990-01-01';
+        
+        // Validar edad mínima (18 años)
+        if (!validar_edad_minima_recepcion($fechaNac, 18)) {
+            error_log("Intento de registro de usuario menor de 18 años desde recepción. DNI: $dni, Fecha Nac: $fechaNac");
+            return false;
+        }
+        
         $correo = 'sinconfigurar@mail.com';
         $contraseña = password_hash('123456', PASSWORD_DEFAULT); // Contraseña por defecto
         $idRol = 2; // Rol por defecto
