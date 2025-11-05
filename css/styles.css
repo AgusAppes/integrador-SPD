@@ -402,7 +402,7 @@ header nav ul li.user-name-link > a.user-profile-link:hover {
 
 .events-table th {
     background: #415a77;
-    color: white;
+    color: white !important;
     padding: 10px;
     text-align: left;
     font-weight: 600;

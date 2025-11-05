@@ -405,7 +405,6 @@ function procesar_compra_anticipada($id_evento, $id_usuario = null)
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
-
         if (!$id_usuario) {
             if (!isset($_SESSION['usuario_id']) || !$_SESSION['usuario_id']) {
                 return [
@@ -425,7 +424,6 @@ function procesar_compra_anticipada($id_evento, $id_usuario = null)
         $stmt_evento = $conexion->prepare($sql_evento);
         $stmt_evento->execute([':id_evento' => $id_evento]);
         $evento = $stmt_evento->fetch(PDO::FETCH_ASSOC);
-
         if (!$evento) {
             $conexion->rollBack();
             return [
@@ -458,7 +456,6 @@ function procesar_compra_anticipada($id_evento, $id_usuario = null)
         $stmt_count = $conexion->prepare($sql_count);
         $stmt_count->execute([':id_evento' => $id_evento]);
         $vendidas = $stmt_count->fetch(PDO::FETCH_ASSOC)['vendidas'];
-
         if ($vendidas >= $evento['cantidad_anticipadas']) {
             $conexion->rollBack();
             return [
@@ -483,7 +480,6 @@ function procesar_compra_anticipada($id_evento, $id_usuario = null)
             ':precio' => $evento['precio_anticipadas']
         ]);
         $id_entrada = $conexion->lastInsertId();
-
         // 5. Crear registro en tabla ventas
         $sql_venta = "INSERT INTO ventas (fecha_venta, cantidad_entradas, monto_total, id_usuario) 
                      VALUES (NOW(), 1, :monto_total, :id_usuario)";
@@ -493,7 +489,6 @@ function procesar_compra_anticipada($id_evento, $id_usuario = null)
             ':id_usuario' => $id_usuario
         ]);
         $id_venta = $conexion->lastInsertId();
-
         // 6. Crear registro en tabla detalle_venta
         $sql_detalle = "INSERT INTO detalle_venta (id_venta, id_entrada) 
                        VALUES (:id_venta, :id_entrada)";

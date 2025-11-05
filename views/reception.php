@@ -1,27 +1,10 @@
-<?php
-// Verificar que el usuario esté logueado
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Verificar que el usuario tenga rol de recepcionista (3) o administrador (1)
-if (!isset($_SESSION['loggedin']) || !$_SESSION['loggedin']) {
-    header('Location: ' . BASE_URL . 'index.php?page=login&error=' . urlencode('Debes iniciar sesión para acceder al panel de recepción'));
-    exit;
-}
-
-$rol_permitido = isset($_SESSION['usuario_rol']) && ($_SESSION['usuario_rol'] == 3 || $_SESSION['usuario_rol'] == 1);
-if (!$rol_permitido) {
-    header('Location: ' . BASE_URL . 'index.php?page=home&error=' . urlencode('No tienes permisos para acceder al panel de recepción'));
-    exit;
-}
-?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Recepción - MALPA CLUB</title>
+    <link rel="icon" type="image/png" href="<?php echo BASE_URL; ?>img/favicon.png">
     <!-- Estilos base -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/styles.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/reception.css">
@@ -115,6 +98,9 @@ if (!$rol_permitido) {
     <!-- Scripts -->
     <script src="<?php echo BASE_URL; ?>js/toast.js"></script>
     <script>
+        // URL base para peticiones fetch
+        const BASE_URL = '<?php echo BASE_URL; ?>';
+        
         // Variables globales
         let currentEvent = null;
         let events = [];
@@ -127,7 +113,7 @@ if (!$rol_permitido) {
         // Cargar eventos disponibles
         async function loadEvents() {
             try {
-                const response = await fetch('<?php echo BASE_URL; ?>methods/events.php?action=get_active_events');
+                const response = await fetch(BASE_URL + 'methods/events.php?action=get_active_events');
                 const result = await response.json();
                 
                 if (result.success) {
@@ -194,7 +180,7 @@ if (!$rol_permitido) {
                     // Limpiar localStorage
                     localStorage.removeItem('selectedEvent');
                     // Volver al selector
-                    document.getElementById('event-selector').style.display = 'block';
+                    document.getElementById('event-selector').style.display = 'flex';
                     document.getElementById('event-header').style.display = 'none';
                     document.getElementById('main-panels').style.display = 'none';
                     // Limpiar selección
@@ -349,6 +335,8 @@ if (!$rol_permitido) {
             if (e.key === 'Enter') {
                 const value = this.value.trim();
                 if (!value) return;
+                // Limpiar DNI anterior al hacer nuevo escaneo
+                lastScannedDNI = null;
                 const parsed = parseDNIBarcode(value);
                 displayParsedResult(parsed);
                 this.value = ''; // limpiar para el siguiente escaneo
@@ -359,6 +347,8 @@ if (!$rol_permitido) {
         scannerInput.addEventListener('paste', function(e) {
             setTimeout(() => {
                 const value = this.value.trim();
+                // Limpiar DNI anterior al hacer nuevo escaneo
+                lastScannedDNI = null;
                 const parsed = parseDNIBarcode(value);
                 displayParsedResult(parsed);
                 this.value = '';
@@ -392,13 +382,10 @@ if (!$rol_permitido) {
         // Función para procesar DNI con el backend
         async function processDNIWithBackend(dniData) {
             try {
-                console.log('Enviando datos al backend:', { 
-                    action: 'scan_dni', 
-                    dni_data: dniData,
-                    event_id: currentEvent ? currentEvent.id : null
-                });
+                // Guardar el DNI para poder usarlo después de vender entrada
+                lastScannedDNI = dniData;
                 
-                const response = await fetch('<?php echo BASE_URL; ?>methods/reception.php', {
+                const response = await fetch(BASE_URL + 'methods/reception.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -544,7 +531,7 @@ if (!$rol_permitido) {
             }
             
             try {
-                const response = await fetch('<?php echo BASE_URL; ?>methods/reception.php', {
+                const response = await fetch(BASE_URL + 'methods/reception.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -577,6 +564,9 @@ if (!$rol_permitido) {
             }
         }
 
+        // Variable global para almacenar el último DNI escaneado
+        let lastScannedDNI = null;
+
         // Función para vender entrada
         async function sellTicket(userId, ticketId) {
             console.log('Vendiendo entrada para usuario:', userId, 'entrada:', ticketId);
@@ -587,36 +577,38 @@ if (!$rol_permitido) {
             }
             
             try {
-                const response = await fetch('<?php echo BASE_URL; ?>methods/reception.php', {
+                const response = await fetch(BASE_URL + 'methods/reception.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        action: 'sell_door_ticket',
+                        action: 'sell_ticket',
                         user_id: userId,
-                        event_id: currentEvent.id,
-                        ticket_id: ticketId && ticketId !== '' ? ticketId : null
+                        event_id: currentEvent.id
                     })
                 });
 
                 const result = await response.json();
-                console.log('Resultado de venta de entrada:', result);
+                console.log('Resultado de la venta:', result);
 
                 if (result.success) {
-                    showToast(result.message, 'success');
-                    // Actualizar capacidad en tiempo real
-                    if (result.capacity) {
-                        updateCapacityDisplay(result.capacity);
+                    showToast(result.message + ' - Nro. Serie: ' + result.data.nro_serie, 'success');
+                    
+                    // Si tenemos el DNI del último escaneo, refrescar la información
+                    if (lastScannedDNI) {
+                        console.log('Refrescando información del DNI después de la venta...');
+                        await processDNIWithBackend(lastScannedDNI);
+                    } else {
+                        // Limpiar resultado de verificación para permitir nuevo escaneo
+                        document.getElementById('verification-result').style.display = 'none';
                     }
-                    // Limpiar resultado de verificación para permitir nuevo escaneo
-                    document.getElementById('verification-result').style.display = 'none';
                 } else {
                     showToast(result.message, 'error');
                 }
             } catch (error) {
                 console.error('Error al vender entrada:', error);
-                showToast('Error de conexión al vender entrada', 'error');
+                showToast('Error de conexión al procesar la venta', 'error');
             }
         }
 
@@ -630,7 +622,7 @@ if (!$rol_permitido) {
             }
             
             try {
-                const response = await fetch('<?php echo BASE_URL; ?>methods/reception.php', {
+                const response = await fetch(BASE_URL + 'methods/reception.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -691,7 +683,7 @@ if (!$rol_permitido) {
             if (!currentEvent) return;
             
             try {
-                const response = await fetch('<?php echo BASE_URL; ?>methods/reception.php', {
+                const response = await fetch(BASE_URL + 'methods/reception.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -731,7 +723,7 @@ if (!$rol_permitido) {
             if (testBtn) {
                 testBtn.addEventListener('click', async function() {
                     try {
-                        const response = await fetch('../methods/test_connection.php');
+                        const response = await fetch(BASE_URL + 'methods/test_connection.php');
                         const result = await response.json();
                         
                         if (result.success) {

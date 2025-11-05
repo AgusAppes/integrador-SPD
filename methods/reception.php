@@ -21,7 +21,10 @@ function processDNIScan($dniData, $eventId = null) {
         $existingUser = findUserByDNI($dni);
         
         if ($existingUser) {
-            // Usuario existe, verificar entrada si se proporciona eventId
+            // Usuario existe, actualizar datos con información real del DNI
+            $updatedUser = updateUserDataFromDNI($existingUser['id'], $dniData);
+            
+            // Verificar entrada si se proporciona eventId
             $ticketInfo = null;
             if ($eventId) {
                 $ticketInfo = checkUserTicketForEvent($existingUser['id'], $eventId);
@@ -29,8 +32,8 @@ function processDNIScan($dniData, $eventId = null) {
             
             return [
                 'success' => true,
-                'message' => 'Usuario encontrado',
-                'user' => $existingUser,
+                'message' => 'Usuario encontrado y datos actualizados',
+                'user' => $updatedUser ? $updatedUser : $existingUser,
                 'action' => 'found',
                 'ticket' => $ticketInfo
             ];
@@ -130,6 +133,90 @@ function findUserByDNI($dni) {
     }
 }
 
+// Función para actualizar datos del usuario desde el DNI escaneado
+function updateUserDataFromDNI($userId, $barcodeData) {
+    try {
+        error_log("=== INICIO ACTUALIZACIÓN DE USUARIO ID: $userId ===");
+        
+        $pdo = db_connection();
+        
+        // Obtener datos actuales del usuario
+        $stmt = $pdo->prepare("SELECT nombre, apellido, fecha_nac FROM usuarios WHERE id = ?");
+        $stmt->execute([$userId]);
+        $currentData = $stmt->fetch(PDO::FETCH_ASSOC);
+        error_log("Datos actuales del usuario: " . json_encode($currentData));
+        
+        // Extraer datos del código de barras
+        $userData = extractUserDataFromBarcode($barcodeData);
+        error_log("Datos a actualizar: " . json_encode($userData));
+        
+        // Si se extrajeron datos, actualizar el usuario
+        if (!empty($userData)) {
+            $updateFields = [];
+            $updateValues = [];
+            
+            if (isset($userData['nombre']) && !empty($userData['nombre'])) {
+                $updateFields[] = "nombre = ?";
+                $updateValues[] = $userData['nombre'];
+                error_log("Se actualizará nombre: " . $userData['nombre']);
+            }
+            
+            if (isset($userData['apellido']) && !empty($userData['apellido'])) {
+                $updateFields[] = "apellido = ?";
+                $updateValues[] = $userData['apellido'];
+                error_log("Se actualizará apellido: " . $userData['apellido']);
+            }
+            
+            if (isset($userData['fecha_nac']) && !empty($userData['fecha_nac'])) {
+                $updateFields[] = "fecha_nac = ?";
+                $updateValues[] = $userData['fecha_nac'];
+                error_log("Se actualizará fecha_nac: " . $userData['fecha_nac']);
+            }
+            
+            // Si hay campos para actualizar
+            if (!empty($updateFields)) {
+                $updateValues[] = $userId;
+                $sql = "UPDATE usuarios SET " . implode(", ", $updateFields) . " WHERE id = ?";
+                error_log("SQL a ejecutar: $sql");
+                error_log("Valores: " . json_encode($updateValues));
+                
+                $stmt = $pdo->prepare($sql);
+                $result = $stmt->execute($updateValues);
+                $rowsAffected = $stmt->rowCount();
+                
+                error_log("Resultado de UPDATE: " . ($result ? "ÉXITO" : "FALLO"));
+                error_log("Filas afectadas: $rowsAffected");
+                
+                // Retornar el usuario actualizado
+                $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE id = ?");
+                $stmt->execute([$userId]);
+                $updatedUser = $stmt->fetch();
+                error_log("Datos después de actualizar: " . json_encode([
+                    'nombre' => $updatedUser['nombre'],
+                    'apellido' => $updatedUser['apellido'],
+                    'fecha_nac' => $updatedUser['fecha_nac']
+                ]));
+                error_log("=== FIN ACTUALIZACIÓN DE USUARIO ===");
+                
+                return $updatedUser;
+            } else {
+                error_log("No hay campos para actualizar");
+                error_log("=== FIN ACTUALIZACIÓN DE USUARIO (sin cambios) ===");
+            }
+        } else {
+            error_log("No se extrajeron datos del código de barras");
+            error_log("=== FIN ACTUALIZACIÓN DE USUARIO (sin datos) ===");
+        }
+        
+        return false;
+        
+    } catch (Exception $e) {
+        error_log("ERROR en updateUserDataFromDNI: " . $e->getMessage());
+        error_log("Stack trace: " . $e->getTraceAsString());
+        return false;
+    }
+}
+
 // Función para crear usuario desde datos del DNI
 function createUserFromDNI($dni, $barcodeData) {
     try {
@@ -178,41 +265,99 @@ function createUserFromDNI($dni, $barcodeData) {
 
 // Función para extraer datos del usuario del código de barras
 function extractUserDataFromBarcode($barcodeData) {
+    // Log del dato crudo
+    error_log("=== INICIO EXTRACCIÓN DE DATOS DEL DNI ===");
+    error_log("Código de barras RAW: " . $barcodeData);
+    
+    // Normalizar comillas
     $quotes = array(
-        "\u201C", "\u201D", "\u201E", "\u201F", "\u2018", "\u2019"
+        "\u201C", "\u201D", "\u201E", "\u201F", "\u2018", "\u2019",
+        chr(0xE2) . chr(0x80) . chr(0x9C), // "
+        chr(0xE2) . chr(0x80) . chr(0x9D), // "
+        chr(0xE2) . chr(0x80) . chr(0x98), // '
+        chr(0xE2) . chr(0x80) . chr(0x99)  // '
     );
     $normalized = str_replace($quotes, '"', $barcodeData);
-    $parts = array_filter(array_map('trim', explode('"', $normalized)), function($part) {
-        return !empty($part);
-    });
+    
+    // Dividir por comillas
+    $parts = explode('"', $normalized);
+    $parts = array_values(array_filter(array_map('trim', $parts), function($part) {
+        return $part !== '';
+    }));
+    
+    error_log("Partes separadas (" . count($parts) . "): " . json_encode($parts));
     
     $userData = [];
     $genders = ['M', 'F', 'O'];
+    $genderIndex = -1;
     
-    // Buscar nombre y apellido
+    // Buscar índice del género
     for ($i = 0; $i < count($parts); $i++) {
-        $part = strtoupper($parts[$i]);
-        if (in_array($part, $genders)) {
-            // El nombre suele estar antes del género
-            if ($i > 0) {
-                $userData['nombre'] = $parts[$i - 1];
-            }
-            // El apellido suele estar en la segunda posición
-            if (count($parts) > 1) {
-                $userData['apellido'] = $parts[1];
-            }
+        $partUpper = strtoupper(trim($parts[$i]));
+        if (in_array($partUpper, $genders)) {
+            $genderIndex = $i;
+            error_log("Género encontrado en índice $i: " . $partUpper);
             break;
         }
     }
     
-    // Buscar fecha de nacimiento (formato DD-MM-YYYY)
-    foreach ($parts as $part) {
-        if (preg_match('/\d{2}-\d{2}-\d{4}/', $part)) {
-            $dateParts = explode('-', $part);
-            $userData['fecha_nac'] = $dateParts[2] . '-' . $dateParts[1] . '-' . $dateParts[0];
-            break;
+    // Si encontramos el género, extraer nombre y apellido
+    if ($genderIndex >= 0) {
+        // Formato típico: NOMBRE @ APELLIDO @ SEXO @ DNI @ ...
+        if ($genderIndex >= 2) {
+            $apellidoCompleto = trim($parts[$genderIndex - 2]);
+            $userData['apellido'] = ucwords(strtolower($apellidoCompleto));
+            error_log("Apellido extraído (pos " . ($genderIndex - 2) . "): " . $userData['apellido']);
+        }
+        
+        if ($genderIndex >= 1) {
+            $nombreCompleto = trim($parts[$genderIndex - 1]);
+            $userData['nombre'] = ucwords(strtolower($nombreCompleto));
+            error_log("Nombre extraído (pos " . ($genderIndex - 1) . "): " . $userData['nombre']);
         }
     }
+    
+    // Si no se encontró nombre o apellido con la lógica anterior, intentar otros patrones
+    if (empty($userData['nombre']) && count($parts) >= 1) {
+        $userData['nombre'] = ucwords(strtolower(trim($parts[0])));
+        error_log("Nombre extraído (fallback, pos 0): " . $userData['nombre']);
+    }
+    
+    if (empty($userData['apellido']) && count($parts) >= 2) {
+        $userData['apellido'] = ucwords(strtolower(trim($parts[1])));
+        error_log("Apellido extraído (fallback, pos 1): " . $userData['apellido']);
+    }
+    
+    // Buscar fecha de nacimiento en diferentes formatos
+    foreach ($parts as $index => $part) {
+        $part = trim($part);
+        
+        // Formato DD/MM/YYYY o DD-MM-YYYY
+        if (preg_match('/(\d{2})[\/-](\d{2})[\/-](\d{4})/', $part, $matches)) {
+            $dia = $matches[1];
+            $mes = $matches[2];
+            $anio = $matches[3];
+            $userData['fecha_nac'] = "$anio-$mes-$dia";
+            error_log("Fecha encontrada (formato DD/MM/YYYY) en pos $index: " . $userData['fecha_nac']);
+            break;
+        }
+        
+        // Formato DDMMYYYY (8 dígitos seguidos)
+        if (preg_match('/^(\d{2})(\d{2})(\d{4})$/', $part, $matches)) {
+            $dia = $matches[1];
+            $mes = $matches[2];
+            $anio = $matches[3];
+            // Validar que sea una fecha válida
+            if ($mes >= 1 && $mes <= 12 && $dia >= 1 && $dia <= 31 && $anio >= 1900 && $anio <= date('Y')) {
+                $userData['fecha_nac'] = "$anio-$mes-$dia";
+                error_log("Fecha encontrada (formato DDMMYYYY) en pos $index: " . $userData['fecha_nac']);
+                break;
+            }
+        }
+    }
+    
+    error_log("Datos finales extraídos: " . json_encode($userData));
+    error_log("=== FIN EXTRACCIÓN DE DATOS DEL DNI ===");
     
     return $userData;
 }
@@ -414,136 +559,6 @@ function registerExit($userId, $ticketId, $eventId) {
     }
 }
 
-// Función para vender entrada en puerta
-function sellDoorTicket($userId, $eventId, $existingTicketId = null) {
-    try {
-        $pdo = db_connection();
-        
-        // Iniciar transacción
-        $pdo->beginTransaction();
-        
-        // Obtener información del evento
-        $stmt = $pdo->prepare("SELECT precio_en_puerta, cupo_total FROM eventos WHERE id = ?");
-        $stmt->execute([$eventId]);
-        $evento = $stmt->fetch();
-        
-        if (!$evento) {
-            $pdo->rollBack();
-            return [
-                'success' => false,
-                'message' => 'Evento no encontrado'
-            ];
-        }
-        
-        // Verificar capacidad disponible
-        $capacityResult = checkEventCapacity($eventId);
-        if (!$capacityResult['success']) {
-            $pdo->rollBack();
-            return $capacityResult;
-        }
-        
-        // Verificar que no esté al límite de capacidad (reservar espacio)
-        if ($capacityResult['current_capacity'] >= $capacityResult['max_capacity']) {
-            $pdo->rollBack();
-            return [
-                'success' => false,
-                'message' => 'El local está al máximo de su capacidad'
-            ];
-        }
-        
-        $precio = $evento['precio_en_puerta'];
-        $ticketId = null;
-        
-        // Si hay entrada existente (cancelada), reactivarla
-        if ($existingTicketId) {
-            // Verificar que la entrada pertenece al usuario y evento
-            $stmt = $pdo->prepare("
-                SELECT id, id_estado 
-                FROM entradas 
-                WHERE id = ? AND id_usuario = ? AND id_evento = ?
-            ");
-            $stmt->execute([$existingTicketId, $userId, $eventId]);
-            $existingTicket = $stmt->fetch();
-            
-            if ($existingTicket && $existingTicket['id_estado'] == 2) {
-                // Reactivar entrada cancelada: cambiar estado a vendida (1) y tipo a en puerta (2)
-                $stmt = $pdo->prepare("UPDATE entradas SET id_estado = 1, id_tipo_entrada = 2, precio = ? WHERE id = ?");
-                $stmt->execute([$precio, $existingTicketId]);
-                $ticketId = $existingTicketId;
-            }
-        }
-        
-        // Si no había entrada o no se pudo reactivar, crear nueva
-        if (!$ticketId) {
-            // Generar número de serie: ID_evento + número aleatorio
-            $nro_serie = intval($eventId . rand(10000, 99999));
-            
-            // Verificar que el número de serie sea único
-            $stmt = $pdo->prepare("SELECT id FROM entradas WHERE nro_serie = ?");
-            $stmt->execute([$nro_serie]);
-            while ($stmt->fetch()) {
-                $nro_serie = intval($eventId . rand(10000, 99999));
-                $stmt->execute([$nro_serie]);
-            }
-            
-            // Crear nueva entrada en puerta (tipo_entrada = 2, estado = 1)
-            $stmt = $pdo->prepare("
-                INSERT INTO entradas (nro_serie, id_usuario, id_evento, id_estado, id_tipo_entrada, precio) 
-                VALUES (?, ?, ?, 1, 2, ?)
-            ");
-            $stmt->execute([$nro_serie, $userId, $eventId, $precio]);
-            $ticketId = $pdo->lastInsertId();
-        }
-        
-        // Crear registro de venta
-        $stmt = $pdo->prepare("
-            INSERT INTO ventas (fecha_venta, cantidad_entradas, monto_total, id_usuario) 
-            VALUES (NOW(), 1, ?, ?)
-        ");
-        $stmt->execute([$precio, $userId]);
-        $ventaId = $pdo->lastInsertId();
-        
-        // Crear registro en detalle_venta
-        $stmt = $pdo->prepare("
-            INSERT INTO detalle_venta (id_venta, id_entrada) 
-            VALUES (?, ?)
-        ");
-        $stmt->execute([$ventaId, $ticketId]);
-        
-        // Confirmar transacción
-        $pdo->commit();
-        
-        // Obtener información de la entrada creada/actualizada
-        $stmt = $pdo->prepare("
-            SELECT e.*, es.nombre as estado_nombre, te.nombre as tipo_entrada_nombre
-            FROM entradas e
-            INNER JOIN estados es ON e.id_estado = es.id
-            INNER JOIN tipo_entrada te ON e.id_tipo_entrada = te.id
-            WHERE e.id = ?
-        ");
-        $stmt->execute([$ticketId]);
-        $ticket = $stmt->fetch();
-        
-        // Actualizar capacidad
-        $updatedCapacity = checkEventCapacity($eventId);
-        
-        return [
-            'success' => true,
-            'message' => $existingTicketId ? 'Entrada reactivada exitosamente' : 'Entrada vendida exitosamente',
-            'ticket' => $ticket,
-            'capacity' => $updatedCapacity
-        ];
-        
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        error_log("Error en sellDoorTicket: " . $e->getMessage());
-        return [
-            'success' => false,
-            'message' => 'Error al procesar la venta: ' . $e->getMessage()
-        ];
-    }
-}
-
 // Función para verificar capacidad del evento
 function checkEventCapacity($eventId) {
     try {
@@ -590,6 +605,109 @@ function checkEventCapacity($eventId) {
     }
 }
 
+// Función para vender entrada en puerta
+function venderEntradaEnPuerta($userId, $eventId) {
+    try {
+        $pdo = db_connection();
+        
+        // Iniciar transacción
+        $pdo->beginTransaction();
+        
+        // 1. Verificar que el evento existe
+        $stmt = $pdo->prepare("SELECT * FROM eventos WHERE id = ?");
+        $stmt->execute([$eventId]);
+        $evento = $stmt->fetch();
+        
+        if (!$evento) {
+            $pdo->rollBack();
+            return [
+                'success' => false,
+                'message' => 'Evento no encontrado'
+            ];
+        }
+        
+        // 2. Verificar que el usuario no tenga ya una entrada activa para este evento
+        $stmt = $pdo->prepare("
+            SELECT id, id_estado 
+            FROM entradas 
+            WHERE id_usuario = ? AND id_evento = ? AND id_estado IN (1, 3)
+            LIMIT 1
+        ");
+        $stmt->execute([$userId, $eventId]);
+        $entradaExistente = $stmt->fetch();
+        
+        if ($entradaExistente) {
+            $pdo->rollBack();
+            return [
+                'success' => false,
+                'message' => 'El usuario ya tiene una entrada activa para este evento'
+            ];
+        }
+        
+        // 3. Generar número de serie: ID_evento + número aleatorio
+        $nro_serie = intval($eventId . rand(10000, 99999));
+        
+        // 4. Crear registro en tabla entradas (tipo 2 = en puerta, estado 1 = vendida)
+        $stmt = $pdo->prepare("
+            INSERT INTO entradas (nro_serie, id_usuario, id_evento, id_estado, id_tipo_entrada, precio) 
+            VALUES (?, ?, ?, 1, 2, ?)
+        ");
+        $stmt->execute([
+            $nro_serie,
+            $userId,
+            $eventId,
+            $evento['precio_en_puerta']
+        ]);
+        $id_entrada = $pdo->lastInsertId();
+        
+        // 5. Crear registro en tabla ventas
+        $stmt = $pdo->prepare("
+            INSERT INTO ventas (fecha_venta, cantidad_entradas, monto_total, id_usuario) 
+            VALUES (NOW(), 1, ?, ?)
+        ");
+        $stmt->execute([
+            $evento['precio_en_puerta'],
+            $userId
+        ]);
+        $id_venta = $pdo->lastInsertId();
+        
+        // 6. Crear registro en tabla detalle_venta
+        $stmt = $pdo->prepare("
+            INSERT INTO detalle_venta (id_venta, id_entrada) 
+            VALUES (?, ?)
+        ");
+        $stmt->execute([
+            $id_venta,
+            $id_entrada
+        ]);
+        
+        // Confirmar transacción
+        $pdo->commit();
+        
+        return [
+            'success' => true,
+            'message' => 'Entrada vendida exitosamente',
+            'data' => [
+                'nro_serie' => $nro_serie,
+                'evento' => $evento['nombre'],
+                'precio' => $evento['precio_en_puerta'],
+                'id_venta' => $id_venta,
+                'id_entrada' => $id_entrada
+            ]
+        ];
+        
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log("Error en venderEntradaEnPuerta: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error al procesar la venta: ' . $e->getMessage()
+        ];
+    }
+}
+
 // Manejar peticiones AJAX
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
@@ -628,11 +746,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     echo json_encode($result);
                     exit;
                     
-                case 'sell_door_ticket':
+                case 'sell_ticket':
                     $userId = $input['user_id'] ?? null;
                     $eventId = $input['event_id'] ?? null;
-                    $ticketId = $input['ticket_id'] ?? null;
-                    $result = sellDoorTicket($userId, $eventId, $ticketId);
+                    $result = venderEntradaEnPuerta($userId, $eventId);
                     echo json_encode($result);
                     exit;
             }

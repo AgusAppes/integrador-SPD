@@ -7,9 +7,9 @@ function listar_eventos() {
     try {
         $conexion = db_connection();
         
-        // Obtener todos los eventos, ordenados por fecha
         $sql = "SELECT id, nombre, descripcion, fecha, cupo_total, cantidad_anticipadas, precio_anticipadas, precio_en_puerta, banner 
                 FROM eventos 
+                WHERE fecha >= NOW()
                 ORDER BY fecha ASC";
         
         $stmt = $conexion->prepare($sql);
@@ -97,12 +97,25 @@ $mensaje_exito = isset($_GET['success']) ? urldecode($_GET['success']) : 'Entrad
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo de Eventos</title>
+    <link rel="icon" type="image/png" href="<?php echo BASE_URL; ?>img/favicon.png">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/styles.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/catalogo.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/modal.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/toast.css">
 </head>
 <body>
+    <!-- Fondo animado -->
+    <div class="background">
+        <span class="ball"></span>
+        <span class="ball"></span>
+        <span class="ball"></span>
+        <span class="ball"></span>
+        <span class="ball"></span>
+        <span class="ball"></span>
+        <span class="ball"></span>
+        <span class="ball"></span>
+    </div>
+    
     <!-- Container para notificaciones toast -->
     <div id="toast-container" class="toast-container"></div>
     
