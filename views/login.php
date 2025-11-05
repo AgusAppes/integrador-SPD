@@ -59,7 +59,7 @@
             
             <div class="login-links">
                 <div class="forgot-password">
-                    <a href="#" class="link-secundario">¿Olvidaste tu contraseña?</a>
+                    <a href="<?php echo BASE_URL; ?>index.php?page=forgot-password" class="link-secundario">¿Olvidaste tu contraseña?</a>
                 </div>
                 <div class="register-link">
                     <p>¿No tienes cuenta? <a href="?page=register">Crear cuenta</a></p>

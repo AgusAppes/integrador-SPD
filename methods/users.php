@@ -13,8 +13,10 @@ if (file_exists($email_config_path)) {
     }
 }
 
-// Header para respuesta JSON (solo para probar en postman - ignorar)
-header('Content-Type: application/json; charset=utf-8');
+// Header para respuesta JSON (solo si no hay POST, para evitar conflictos con redirects)
+if (!$_POST) {
+    header('Content-Type: application/json; charset=utf-8');
+}
 
 // Función auxiliar para validar edad mínima (18 años)
 function validar_edad_minima($fecha_nacimiento, $edad_minima = 18) {
@@ -34,7 +36,7 @@ function validar_edad_minima($fecha_nacimiento, $edad_minima = 18) {
     }
 }
 
-// Función para enviar correo usando SMTP directo (Gmail) - reutilizada de sales.php
+// Función para enviar correo usando SMTP directo (Gmail) - versión mejorada
 function enviar_correo_smtp($correo_destino, $asunto, $mensaje_html) {
     // Verificar si hay configuración SMTP
     if (!defined('EMAIL_SMTP_HOST') || !defined('EMAIL_SMTP_USER') || !defined('EMAIL_SMTP_PASS')) {
@@ -42,11 +44,26 @@ function enviar_correo_smtp($correo_destino, $asunto, $mensaje_html) {
         return false;
     }
     
+    error_log("Iniciando envío de correo SMTP a: " . $correo_destino);
+    
     try {
         // Crear conexión SMTP
         $smtp_host = EMAIL_SMTP_HOST;
         $smtp_port = defined('EMAIL_SMTP_PORT') ? EMAIL_SMTP_PORT : 587;
         $smtp_secure = defined('EMAIL_SMTP_SECURE') ? EMAIL_SMTP_SECURE : 'tls';
+        
+        // Función auxiliar para leer todas las líneas de respuesta SMTP
+        function leer_respuesta_smtp($socket) {
+            $respuesta_completa = '';
+            while ($linea = fgets($socket, 515)) {
+                $respuesta_completa .= $linea;
+                // Si la línea no tiene guión después del código, es la última
+                if (strlen($linea) < 4 || $linea[3] !== '-') {
+                    break;
+                }
+            }
+            return $respuesta_completa;
+        }
         
         // Abrir conexión
         $context = stream_context_create([
@@ -72,33 +89,89 @@ function enviar_correo_smtp($correo_destino, $asunto, $mensaje_html) {
         }
         
         // Leer respuesta inicial
-        fgets($socket, 515);
-        
-        // EHLO
-        fputs($socket, "EHLO " . EMAIL_SMTP_HOST . "\r\n");
-        fgets($socket, 515);
+        $response = fgets($socket, 515);
+        if (strpos($response, '220') === false) {
+            error_log("Error en respuesta inicial SMTP: " . trim($response));
+            fclose($socket);
+            return false;
+        }
         
         // STARTTLS si es necesario
         if ($smtp_secure === 'tls') {
-            fputs($socket, "STARTTLS\r\n");
-            fgets($socket, 515);
-            stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+            // Primero EHLO para ver qué soporta el servidor (sin TLS)
             fputs($socket, "EHLO " . EMAIL_SMTP_HOST . "\r\n");
-            fgets($socket, 515);
+            $ehlo_response = leer_respuesta_smtp($socket);
+            
+            // Verificar que EHLO fue exitoso
+            if (strpos($ehlo_response, '250') === false) {
+                error_log("Error en EHLO inicial. Respuesta: " . trim($ehlo_response));
+                fclose($socket);
+                return false;
+            }
+            
+            // Solicitar STARTTLS
+            fputs($socket, "STARTTLS\r\n");
+            $starttls_response = leer_respuesta_smtp($socket);
+            
+            // STARTTLS debe responder con 220 (no 250)
+            if (strpos($starttls_response, '220') === false) {
+                error_log("Error en STARTTLS. Respuesta completa: " . trim($starttls_response));
+                fclose($socket);
+                return false;
+            }
+            
+            // Habilitar cifrado TLS
+            if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+                error_log("Error habilitando TLS. Verifica la versión de OpenSSL.");
+                fclose($socket);
+                return false;
+            }
+            
+            // EHLO después de TLS (necesario para renegociar capacidades)
+            fputs($socket, "EHLO " . EMAIL_SMTP_HOST . "\r\n");
+            $ehlo_tls_response = leer_respuesta_smtp($socket);
+            
+            // Verificar que EHLO después de TLS fue exitoso
+            if (strpos($ehlo_tls_response, '250') === false) {
+                error_log("Error en EHLO después de TLS. Respuesta: " . trim($ehlo_tls_response));
+                fclose($socket);
+                return false;
+            }
+        } else {
+            // EHLO si no es TLS
+            fputs($socket, "EHLO " . EMAIL_SMTP_HOST . "\r\n");
+            $ehlo_response = leer_respuesta_smtp($socket);
+            if (strpos($ehlo_response, '250') === false) {
+                error_log("Error en EHLO. Respuesta: " . trim($ehlo_response));
+                fclose($socket);
+                return false;
+            }
         }
         
         // Autenticación
         fputs($socket, "AUTH LOGIN\r\n");
-        fgets($socket, 515);
+        $response = fgets($socket, 515);
+        if (strpos($response, '334') === false) {
+            error_log("Error iniciando autenticación SMTP. Respuesta: " . trim($response));
+            fclose($socket);
+            return false;
+        }
         
         fputs($socket, base64_encode(EMAIL_SMTP_USER) . "\r\n");
-        fgets($socket, 515);
+        $response = fgets($socket, 515);
+        if (strpos($response, '334') === false) {
+            error_log("Error enviando usuario SMTP. Respuesta: " . trim($response));
+            fclose($socket);
+            return false;
+        }
         
-        fputs($socket, base64_encode(EMAIL_SMTP_PASS) . "\r\n");
+        // Trim password antes de codificar
+        $password = trim(EMAIL_SMTP_PASS);
+        fputs($socket, base64_encode($password) . "\r\n");
         $response = fgets($socket, 515);
         
         if (strpos($response, '235') === false) {
-            error_log("Error de autenticación SMTP");
+            error_log("Error de autenticación SMTP. Respuesta: " . trim($response));
             fclose($socket);
             return false;
         }
@@ -107,15 +180,30 @@ function enviar_correo_smtp($correo_destino, $asunto, $mensaje_html) {
         $from_email = defined('EMAIL_FROM_ADDRESS') ? EMAIL_FROM_ADDRESS : EMAIL_SMTP_USER;
         $from_name = defined('EMAIL_FROM_NAME') ? EMAIL_FROM_NAME : 'Malpa Eventos';
         fputs($socket, "MAIL FROM: <" . $from_email . ">\r\n");
-        fgets($socket, 515);
+        $response = fgets($socket, 515);
+        if (strpos($response, '250') === false) {
+            error_log("Error en MAIL FROM. Respuesta: " . trim($response));
+            fclose($socket);
+            return false;
+        }
         
         // TO
         fputs($socket, "RCPT TO: <" . $correo_destino . ">\r\n");
-        fgets($socket, 515);
+        $response = fgets($socket, 515);
+        if (strpos($response, '250') === false && strpos($response, '251') === false) {
+            error_log("Error en RCPT TO. Respuesta: " . trim($response));
+            fclose($socket);
+            return false;
+        }
         
         // DATA
         fputs($socket, "DATA\r\n");
-        fgets($socket, 515);
+        $response = fgets($socket, 515);
+        if (strpos($response, '354') === false) {
+            error_log("Error en DATA. Respuesta: " . trim($response));
+            fclose($socket);
+            return false;
+        }
         
         // Headers
         $headers = "From: " . $from_name . " <" . $from_email . ">\r\n";
@@ -139,7 +227,7 @@ function enviar_correo_smtp($correo_destino, $asunto, $mensaje_html) {
             error_log("✓ Correo enviado exitosamente vía SMTP a: " . $correo_destino);
             return true;
         } else {
-            error_log("✗ Error enviando correo vía SMTP: " . $response);
+            error_log("✗ Error enviando correo vía SMTP. Respuesta: " . trim($response));
             return false;
         }
         
@@ -609,10 +697,291 @@ function cerrar_sesion() {
     }
 }
 
+// Función para solicitar recuperación de contraseña
+function solicitar_recuperacion_contraseña($correo) {
+    try {
+        $conexion = db_connection();
+        
+        // Buscar usuario por correo
+        $sql = "SELECT id, correo, nombre, apellido FROM usuarios WHERE LOWER(correo) = LOWER(:correo)";
+        $stmt = $conexion->prepare($sql);
+        $stmt->execute([':correo' => trim($correo)]);
+        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$usuario) {
+            // Por seguridad, no revelar si el correo existe o no
+            return [
+                'success' => true,
+                'message' => 'Si el correo existe, recibirás un email con las instrucciones para restablecer tu contraseña'
+            ];
+        }
+        
+        // Crear tabla password_resets si no existe
+        try {
+            $conexion->exec("CREATE TABLE IF NOT EXISTS `password_resets` (
+                `usuario_id` int(11) NOT NULL,
+                `token` varchar(255) NOT NULL,
+                `expira` int(11) NOT NULL,
+                PRIMARY KEY (`usuario_id`),
+                KEY `idx_expira` (`expira`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        } catch (PDOException $e) {
+            error_log("Error creando tabla password_resets: " . $e->getMessage());
+        }
+        
+        // Generar token seguro
+        $token = bin2hex(random_bytes(32));
+        $token_hash = hash('sha256', $token);
+        $expira = time() + (60 * 60); // 1 hora
+        
+        // Eliminar token existente si hay
+        $sql_delete = "DELETE FROM password_resets WHERE usuario_id = :usuario_id";
+        $stmt_delete = $conexion->prepare($sql_delete);
+        $stmt_delete->execute([':usuario_id' => $usuario['id']]);
+        
+        // Guardar token en la base de datos
+        $sql_token = "INSERT INTO password_resets (usuario_id, token, expira) 
+                      VALUES (:usuario_id, :token, :expira)";
+        $stmt_token = $conexion->prepare($sql_token);
+        $stmt_token->execute([
+            ':usuario_id' => $usuario['id'],
+            ':token' => $token_hash,
+            ':expira' => $expira
+        ]);
+        
+        // Generar enlace de recuperación
+        if (!defined('BASE_URL')) {
+            require_once __DIR__ . '/../config/config.php';
+        }
+        
+        $enlace = BASE_URL . 'index.php?page=reset-password&token=' . $token . '&id=' . $usuario['id'];
+        
+        // Preparar email
+        $nombre_completo = trim($usuario['nombre'] . ' ' . $usuario['apellido']);
+        $asunto = 'Recuperación de Contraseña - Malpa Eventos';
+        $mensaje_html = '
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f4f4;
+                    margin: 0;
+                    padding: 20px;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background-color: #ffffff;
+                    border-radius: 10px;
+                    overflow: hidden;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }
+                .header {
+                    background: linear-gradient(135deg, #1a0033 0%, #2d0052 50%, #1a0033 100%);
+                    color: #ffffff;
+                    padding: 30px;
+                    text-align: center;
+                }
+                .content {
+                    padding: 30px;
+                }
+                .button {
+                    display: inline-block;
+                    background-color: #5f0f40;
+                    color: #ffffff;
+                    padding: 12px 30px;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    margin: 20px 0;
+                }
+                .footer {
+                    background-color: #f8f9fa;
+                    padding: 20px;
+                    text-align: center;
+                    color: #6c757d;
+                    font-size: 14px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Recuperación de Contraseña</h1>
+                </div>
+                <div class="content">
+                    <p>Hola <strong>' . htmlspecialchars($nombre_completo) . '</strong>,</p>
+                    <p>Recibimos una solicitud para restablecer tu contraseña.</p>
+                    <p>Haz clic en el siguiente botón para crear una nueva contraseña:</p>
+                    <div style="text-align: center;">
+                        <a href="' . $enlace . '" class="button">Restablecer Contraseña</a>
+                    </div>
+                    <p>O copia y pega este enlace en tu navegador:</p>
+                    <p style="word-break: break-all; color: #6c757d;">' . htmlspecialchars($enlace) . '</p>
+                    <p style="color: #dc3545; font-weight: bold;">Este enlace expirará en 1 hora.</p>
+                    <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
+                </div>
+                <div class="footer">
+                    <p>© ' . date('Y') . ' Malpa Eventos. Todos los derechos reservados.</p>
+                </div>
+            </div>
+        </body>
+        </html>';
+        
+        // Enviar email
+        $email_enviado = enviar_correo_smtp($usuario['correo'], $asunto, $mensaje_html);
+        
+        if ($email_enviado) {
+            return [
+                'success' => true,
+                'message' => 'Si el correo existe, recibirás un email con las instrucciones para restablecer tu contraseña'
+            ];
+        } else {
+            return [
+                'success' => false,
+                'message' => 'Error al enviar el correo. Por favor intenta más tarde.'
+            ];
+        }
+        
+    } catch (PDOException $e) {
+        error_log("Error en solicitar_recuperacion_contraseña: " . $e->getMessage());
+        return [
+            'success' => true, // Por seguridad, siempre devolver éxito
+            'message' => 'Si el correo existe, recibirás un email con las instrucciones para restablecer tu contraseña'
+        ];
+    } catch (Exception $e) {
+        error_log("Error general en solicitar_recuperacion_contraseña: " . $e->getMessage());
+        return [
+            'success' => true, // Por seguridad, siempre devolver éxito
+            'message' => 'Si el correo existe, recibirás un email con las instrucciones para restablecer tu contraseña'
+        ];
+    }
+}
+
+// Función para restablecer contraseña
+function restablecer_contraseña($token, $usuario_id, $nueva_contraseña) {
+    try {
+        $conexion = db_connection();
+        
+        // Validar contraseña
+        if (strlen($nueva_contraseña) < 6) {
+            return [
+                'success' => false,
+                'message' => 'La contraseña debe tener al menos 6 caracteres'
+            ];
+        }
+        
+        // Verificar token
+        $token_hash = hash('sha256', $token);
+        $sql = "SELECT usuario_id, expira FROM password_resets WHERE usuario_id = :usuario_id AND token = :token";
+        $stmt = $conexion->prepare($sql);
+        $stmt->execute([
+            ':usuario_id' => $usuario_id,
+            ':token' => $token_hash
+        ]);
+        $reset = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$reset) {
+            error_log("Token inválido para usuario ID: " . $usuario_id);
+            return [
+                'success' => false,
+                'message' => 'El token de recuperación es inválido o ha expirado'
+            ];
+        }
+        
+        // Verificar expiración
+        if (time() > $reset['expira']) {
+            error_log("Token expirado para usuario ID: " . $usuario_id);
+            // Eliminar token expirado
+            $sql_delete = "DELETE FROM password_resets WHERE usuario_id = :usuario_id";
+            $stmt_delete = $conexion->prepare($sql_delete);
+            $stmt_delete->execute([':usuario_id' => $usuario_id]);
+            
+            return [
+                'success' => false,
+                'message' => 'El token de recuperación ha expirado. Por favor solicita uno nuevo.'
+            ];
+        }
+        
+        // Actualizar contraseña
+        $contraseña_hash = password_hash($nueva_contraseña, PASSWORD_DEFAULT);
+        $sql_update = "UPDATE usuarios SET contraseña = :password WHERE id = :id";
+        $stmt_update = $conexion->prepare($sql_update);
+        $resultado = $stmt_update->execute([
+            ':password' => $contraseña_hash,
+            ':id' => $usuario_id
+        ]);
+        
+        if (!$resultado) {
+            return [
+                'success' => false,
+                'message' => 'Error al actualizar la contraseña'
+            ];
+        }
+        
+        // Eliminar token usado
+        $sql_delete = "DELETE FROM password_resets WHERE usuario_id = :usuario_id";
+        $stmt_delete = $conexion->prepare($sql_delete);
+        $stmt_delete->execute([':usuario_id' => $usuario_id]);
+        
+        return [
+            'success' => true,
+            'message' => 'Contraseña restablecida exitosamente. Ya puedes iniciar sesión con tu nueva contraseña.'
+        ];
+        
+    } catch (PDOException $e) {
+        error_log("Error en restablecer_contraseña: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error de base de datos. Por favor intenta más tarde.'
+        ];
+    } catch (Exception $e) {
+        error_log("Error general en restablecer_contraseña: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error interno del servidor'
+        ];
+    }
+}
+
 // Procesar formularios
 if ($_POST) {
     // Determinar qué acción realizar
-    if (isset($_POST['action']) && $_POST['action'] === 'login') {
+    if (isset($_POST['action']) && $_POST['action'] === 'forgot_password') {
+        // Procesar solicitud de recuperación
+        $resultado = solicitar_recuperacion_contraseña($_POST['correo']);
+        
+        if ($resultado['success']) {
+            header('Location: ' . BASE_URL . 'index.php?page=forgot-password&success=' . urlencode($resultado['message']));
+        } else {
+            header('Location: ' . BASE_URL . 'index.php?page=forgot-password&error=' . urlencode($resultado['message']));
+        }
+        exit;
+    } elseif (isset($_POST['action']) && $_POST['action'] === 'reset_password') {
+        // Procesar restablecimiento de contraseña
+        if (!isset($_POST['token']) || !isset($_POST['usuario_id']) || !isset($_POST['nueva_contraseña'])) {
+            header('Location: ' . BASE_URL . 'index.php?page=reset-password&error=' . urlencode('Datos incompletos'));
+            exit;
+        }
+        
+        // Validar que las contraseñas coincidan
+        if (isset($_POST['confirmar_contraseña']) && $_POST['nueva_contraseña'] !== $_POST['confirmar_contraseña']) {
+            header('Location: ' . BASE_URL . 'index.php?page=reset-password&token=' . urlencode($_POST['token']) . '&id=' . urlencode($_POST['usuario_id']) . '&error=' . urlencode('Las contraseñas no coinciden'));
+            exit;
+        }
+        
+        $resultado = restablecer_contraseña($_POST['token'], $_POST['usuario_id'], $_POST['nueva_contraseña']);
+        
+        if ($resultado['success']) {
+            header('Location: ' . BASE_URL . 'index.php?page=login&success=' . urlencode($resultado['message']));
+        } else {
+            header('Location: ' . BASE_URL . 'index.php?page=reset-password&token=' . urlencode($_POST['token']) . '&id=' . urlencode($_POST['usuario_id']) . '&error=' . urlencode($resultado['message']));
+        }
+        exit;
+    } elseif (isset($_POST['action']) && $_POST['action'] === 'login') {
         // Procesar login
         $resultado = iniciar_sesion($_POST);
         

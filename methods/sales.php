@@ -13,7 +13,7 @@ if (file_exists($email_config_path)) {
     }
 }
 
-// Función para enviar correo usando SMTP directo (Gmail)
+// Función para enviar correo usando SMTP directo (Gmail) - versión mejorada
 function enviar_correo_smtp($correo_destino, $asunto, $mensaje_html) {
     // Verificar si hay configuración SMTP
     if (!defined('EMAIL_SMTP_HOST') || !defined('EMAIL_SMTP_USER') || !defined('EMAIL_SMTP_PASS')) {
@@ -21,11 +21,26 @@ function enviar_correo_smtp($correo_destino, $asunto, $mensaje_html) {
         return false;
     }
     
+    error_log("Iniciando envío de correo SMTP a: " . $correo_destino);
+    
     try {
         // Crear conexión SMTP
         $smtp_host = EMAIL_SMTP_HOST;
         $smtp_port = defined('EMAIL_SMTP_PORT') ? EMAIL_SMTP_PORT : 587;
         $smtp_secure = defined('EMAIL_SMTP_SECURE') ? EMAIL_SMTP_SECURE : 'tls';
+        
+        // Función auxiliar para leer todas las líneas de respuesta SMTP
+        function leer_respuesta_smtp($socket) {
+            $respuesta_completa = '';
+            while ($linea = fgets($socket, 515)) {
+                $respuesta_completa .= $linea;
+                // Si la línea no tiene guión después del código, es la última
+                if (strlen($linea) < 4 || $linea[3] !== '-') {
+                    break;
+                }
+            }
+            return $respuesta_completa;
+        }
         
         // Abrir conexión
         $context = stream_context_create([
@@ -51,33 +66,89 @@ function enviar_correo_smtp($correo_destino, $asunto, $mensaje_html) {
         }
         
         // Leer respuesta inicial
-        fgets($socket, 515);
-        
-        // EHLO
-        fputs($socket, "EHLO " . EMAIL_SMTP_HOST . "\r\n");
-        fgets($socket, 515);
+        $response = fgets($socket, 515);
+        if (strpos($response, '220') === false) {
+            error_log("Error en respuesta inicial SMTP: " . trim($response));
+            fclose($socket);
+            return false;
+        }
         
         // STARTTLS si es necesario
         if ($smtp_secure === 'tls') {
-            fputs($socket, "STARTTLS\r\n");
-            fgets($socket, 515);
-            stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+            // Primero EHLO para ver qué soporta el servidor (sin TLS)
             fputs($socket, "EHLO " . EMAIL_SMTP_HOST . "\r\n");
-            fgets($socket, 515);
+            $ehlo_response = leer_respuesta_smtp($socket);
+            
+            // Verificar que EHLO fue exitoso
+            if (strpos($ehlo_response, '250') === false) {
+                error_log("Error en EHLO inicial. Respuesta: " . trim($ehlo_response));
+                fclose($socket);
+                return false;
+            }
+            
+            // Solicitar STARTTLS
+            fputs($socket, "STARTTLS\r\n");
+            $starttls_response = leer_respuesta_smtp($socket);
+            
+            // STARTTLS debe responder con 220 (no 250)
+            if (strpos($starttls_response, '220') === false) {
+                error_log("Error en STARTTLS. Respuesta completa: " . trim($starttls_response));
+                fclose($socket);
+                return false;
+            }
+            
+            // Habilitar cifrado TLS
+            if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+                error_log("Error habilitando TLS. Verifica la versión de OpenSSL.");
+                fclose($socket);
+                return false;
+            }
+            
+            // EHLO después de TLS (necesario para renegociar capacidades)
+            fputs($socket, "EHLO " . EMAIL_SMTP_HOST . "\r\n");
+            $ehlo_tls_response = leer_respuesta_smtp($socket);
+            
+            // Verificar que EHLO después de TLS fue exitoso
+            if (strpos($ehlo_tls_response, '250') === false) {
+                error_log("Error en EHLO después de TLS. Respuesta: " . trim($ehlo_tls_response));
+                fclose($socket);
+                return false;
+            }
+        } else {
+            // EHLO si no es TLS
+            fputs($socket, "EHLO " . EMAIL_SMTP_HOST . "\r\n");
+            $ehlo_response = leer_respuesta_smtp($socket);
+            if (strpos($ehlo_response, '250') === false) {
+                error_log("Error en EHLO. Respuesta: " . trim($ehlo_response));
+                fclose($socket);
+                return false;
+            }
         }
         
         // Autenticación
         fputs($socket, "AUTH LOGIN\r\n");
-        fgets($socket, 515);
+        $response = fgets($socket, 515);
+        if (strpos($response, '334') === false) {
+            error_log("Error iniciando autenticación SMTP. Respuesta: " . trim($response));
+            fclose($socket);
+            return false;
+        }
         
         fputs($socket, base64_encode(EMAIL_SMTP_USER) . "\r\n");
-        fgets($socket, 515);
+        $response = fgets($socket, 515);
+        if (strpos($response, '334') === false) {
+            error_log("Error enviando usuario SMTP. Respuesta: " . trim($response));
+            fclose($socket);
+            return false;
+        }
         
-        fputs($socket, base64_encode(EMAIL_SMTP_PASS) . "\r\n");
+        // Trim password antes de codificar
+        $password = trim(EMAIL_SMTP_PASS);
+        fputs($socket, base64_encode($password) . "\r\n");
         $response = fgets($socket, 515);
         
         if (strpos($response, '235') === false) {
-            error_log("Error de autenticación SMTP");
+            error_log("Error de autenticación SMTP. Respuesta: " . trim($response));
             fclose($socket);
             return false;
         }
@@ -86,15 +157,30 @@ function enviar_correo_smtp($correo_destino, $asunto, $mensaje_html) {
         $from_email = defined('EMAIL_FROM_ADDRESS') ? EMAIL_FROM_ADDRESS : EMAIL_SMTP_USER;
         $from_name = defined('EMAIL_FROM_NAME') ? EMAIL_FROM_NAME : 'Malpa Eventos';
         fputs($socket, "MAIL FROM: <" . $from_email . ">\r\n");
-        fgets($socket, 515);
+        $response = fgets($socket, 515);
+        if (strpos($response, '250') === false) {
+            error_log("Error en MAIL FROM. Respuesta: " . trim($response));
+            fclose($socket);
+            return false;
+        }
         
         // TO
         fputs($socket, "RCPT TO: <" . $correo_destino . ">\r\n");
-        fgets($socket, 515);
+        $response = fgets($socket, 515);
+        if (strpos($response, '250') === false && strpos($response, '251') === false) {
+            error_log("Error en RCPT TO. Respuesta: " . trim($response));
+            fclose($socket);
+            return false;
+        }
         
         // DATA
         fputs($socket, "DATA\r\n");
-        fgets($socket, 515);
+        $response = fgets($socket, 515);
+        if (strpos($response, '354') === false) {
+            error_log("Error en DATA. Respuesta: " . trim($response));
+            fclose($socket);
+            return false;
+        }
         
         // Headers
         $headers = "From: " . $from_name . " <" . $from_email . ">\r\n";
@@ -118,7 +204,7 @@ function enviar_correo_smtp($correo_destino, $asunto, $mensaje_html) {
             error_log("✓ Correo enviado exitosamente vía SMTP a: " . $correo_destino);
             return true;
         } else {
-            error_log("✗ Error enviando correo vía SMTP: " . $response);
+            error_log("✗ Error enviando correo vía SMTP. Respuesta: " . trim($response));
             return false;
         }
         
@@ -374,12 +460,13 @@ function enviar_comprobante_compra($usuario, $evento, $nro_serie, $precio) {
                 }
                 @file_put_contents($html_file, $mensaje_html);
                 
-                // Intentar método alternativo: SMTP directo si está configurado
-                if (!defined('USE_PHP_MAIL') || !USE_PHP_MAIL) {
-                    $envio_exitoso = enviar_correo_smtp($correo_destino, $asunto, $mensaje_html);
-                    if ($envio_exitoso) {
-                        error_log("✓ Correo enviado exitosamente usando SMTP alternativo");
-                    }
+                // Intentar método alternativo: SMTP directo (siempre como respaldo)
+                error_log("Intentando envío alternativo vía SMTP directo...");
+                $envio_exitoso = enviar_correo_smtp($correo_destino, $asunto, $mensaje_html);
+                if ($envio_exitoso) {
+                    error_log("✓ Correo enviado exitosamente usando SMTP alternativo");
+                } else {
+                    error_log("✗ Falló también el envío vía SMTP directo");
                 }
             }
         } catch (Exception $e) {
