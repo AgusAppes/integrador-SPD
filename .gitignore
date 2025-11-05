@@ -1,5 +1,6 @@
 # Archivos de configuración con datos sensibles
 config/config.php
+config/email_config.php
 
 # Archivos temporales del sistema
 .DS_Store
@@ -23,3 +24,5 @@ error_log
 # Directorio de imágenes subidas por usuarios
 images/eventos/
 
+# Archivos de prueba
+test_email.php
