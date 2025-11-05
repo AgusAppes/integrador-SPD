@@ -33,20 +33,26 @@ if ($usuario_logueado) {
                 <!-- Opciones para usuarios logueados -->
                 <?php if ($es_admin): ?>
                     <li><a href="<?php echo BASE_URL; ?>index.php?page=admin">Panel Admin</a></li>
-                    <li><a href="<?php echo BASE_URL; ?>index.php?page=admin-eventos">Gestionar Eventos</a></li>
-                <?php elseif ($es_reception): ?>
-                    <!-- Opciones específicas para recepcionista -->
+                <?php endif; ?>
+                
+                <?php if ($es_reception || $es_admin): ?>
+                    <!-- Opciones para recepcionista -->
                     <li><a href="<?php echo BASE_URL; ?>index.php?page=reception">Panel Recepción</a></li>
                 <?php endif; ?>
                 <li><a href="<?php echo BASE_URL; ?>index.php?page=home#container-ubicacion">Ubicación</a></li>
                 <li><a href="<?php echo BASE_URL; ?>index.php?page=home#container-contacto">Contacto</a></li>
                 <li><a href="<?php echo BASE_URL; ?>index.php?page=catalogo">Eventos</a></li>
-                <li class="user-name-link">
-                    <a href="<?php echo BASE_URL; ?>index.php?page=perfil" class="user-profile-link" id="username-nav-link">
+                <li class="user-dropdown">
+                    <a href="#" class="user-profile-link" id="username-nav-link">
                         <?php echo htmlspecialchars($nombre_completo ?: $nombre_usuario); ?>
+                        <span class="dropdown-arrow">▼</span>
                     </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="<?php echo BASE_URL; ?>index.php?page=perfil">Mi Perfil</a></li>
+                        <li><a href="<?php echo BASE_URL; ?>index.php?page=mis-entradas">Mis Entradas</a></li>
+                        <li><a href="<?php echo BASE_URL; ?>methods/users.php?action=logout" class="logout-link">Cerrar Sesión</a></li>
+                    </ul>
                 </li>
-                <li><a href="<?php echo BASE_URL; ?>methods/users.php?action=logout" class="logout-link">Cerrar Sesión</a></li>
             <?php endif; ?>
             
         </ul>

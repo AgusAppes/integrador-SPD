@@ -157,8 +157,9 @@ $usuarios = $usuarios_resultado['success'] ? $usuarios_resultado['data'] : [];
 // Variables de control
 $usuario_editando = null;
 $mostrar_modal = false;
+$modo_modal = 'crear'; // Por defecto, modo crear
 
-// Verificar si se pasa el parámetro GET "edit"
+// Verificar si se pasa el parámetro GET "edit" (modo edición)
 if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
     // Buscar el usuario a editar
     $usuario_resultado = obtener_usuario($_GET['edit']);
@@ -166,7 +167,14 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
         // Asignar datos del usuario y mostrar modal de edición
         $usuario_editando = $usuario_resultado['data'];
         $mostrar_modal = true;
+        $modo_modal = 'editar';
     }
+}
+
+// Verificar si se pasa el parámetro GET "crear" (modo crear)
+if (isset($_GET['crear'])) {
+    $mostrar_modal = true;
+    $modo_modal = 'crear';
 }
 ?>
 
@@ -236,7 +244,12 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
             
             <!-- Tabla de usuarios -->
             <div class="users-list-container">
-                <h2>Usuarios Registrados</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2>Usuarios Registrados</h2>
+                    <a href="<?php echo BASE_URL; ?>index.php?page=admin-usuarios&crear=1" class="btn btn-primary">
+                        + Crear Usuario
+                    </a>
+                </div>
                 <div class="users-list">
                     <?php if (empty($usuarios)): ?>
                         <!-- Mensaje si no hay usuarios -->
@@ -306,20 +319,24 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
         </div>
     </div>
 
-    <!-- Modal de edición -->
+    <!-- Modal de usuario (crear/editar) -->
     <div id="editUserModal" class="modal <?php echo $mostrar_modal ? 'show' : ''; ?>">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Editar Usuario</h2>
+                <h2><?php echo $modo_modal === 'editar' ? 'Editar Usuario' : 'Crear Usuario'; ?></h2>
                 <!-- Botón para cerrar modal -->
                 <button class="close" onclick="closeModal('editUserModal')">&times;</button>
             </div>
             
-            <!-- Formulario de edición -->
+            <!-- Formulario de usuario -->
             <form action="<?php echo BASE_URL; ?>methods/users.php" method="post" id="editUserForm" class="modal-body modal-usuarios">
                 <!-- Campos ocultos -->
-                <input type="hidden" name="usuario_id" value="<?php echo $usuario_editando ? $usuario_editando['id'] : ''; ?>">
-                <input type="hidden" name="action" value="update">
+                <?php if ($modo_modal === 'editar'): ?>
+                    <input type="hidden" name="usuario_id" value="<?php echo $usuario_editando ? $usuario_editando['id'] : ''; ?>">
+                    <input type="hidden" name="action" value="update">
+                <?php else: ?>
+                    <input type="hidden" name="action" value="create">
+                <?php endif; ?>
                 
                 <!-- Campos de texto -->
                 <div class="form-row">
@@ -375,16 +392,25 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                 </div>
 
                 <div class="form-group">
-                    <label for="edit_contraseña">Nueva Contraseña</label>
-                    <?php if ($usuario_editando): ?>
+                    <label for="edit_contraseña"><?php echo $modo_modal === 'editar' ? 'Nueva Contraseña' : 'Contraseña'; ?> <?php echo $modo_modal === 'crear' ? '<span class="required">*</span>' : ''; ?></label>
+                    <?php if ($modo_modal === 'editar' && $usuario_editando): ?>
                         <div class="password-info">
                             <small class="form-text" style="color: #28a745; font-weight: 600;">
                                 ✓ Contraseña actual establecida
                             </small>
                         </div>
                     <?php endif; ?>
-                    <input type="password" id="edit_contraseña" name="contraseña" placeholder="Dejar en blanco para mantener la actual" autocomplete="new-password">
-                    <small class="form-text">Solo completa si deseas cambiar la contraseña. Mínimo 6 caracteres. Si dejas este campo vacío, se mantendrá la contraseña actual.</small>
+                    <input type="password" id="edit_contraseña" name="contraseña" 
+                           placeholder="<?php echo $modo_modal === 'editar' ? 'Dejar en blanco para mantener la actual' : 'Mínimo 6 caracteres'; ?>" 
+                           autocomplete="new-password"
+                           <?php echo $modo_modal === 'crear' ? 'required' : ''; ?>>
+                    <small class="form-text">
+                        <?php if ($modo_modal === 'editar'): ?>
+                            Solo completa si deseas cambiar la contraseña. Mínimo 6 caracteres. Si dejas este campo vacío, se mantendrá la contraseña actual.
+                        <?php else: ?>
+                            Ingresa una contraseña segura. Mínimo 6 caracteres.
+                        <?php endif; ?>
+                    </small>
                 </div>
 
                 <div class="form-group">
@@ -400,7 +426,9 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
                 <!-- Botones -->
                 <div class="modal-footer">
                     <a href="?page=admin-usuarios" class="btn btn-danger">Cancelar</a>
-                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    <button type="submit" class="btn btn-primary">
+                        <?php echo $modo_modal === 'editar' ? 'Guardar Cambios' : 'Crear Usuario'; ?>
+                    </button>
                 </div>
             </form>
         </div>

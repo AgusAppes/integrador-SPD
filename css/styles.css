@@ -151,6 +151,73 @@ header nav ul li.user-name-link > a.user-profile-link:hover {
   transition: all 0.3s ease;
 }
 
+/* Estilos para el menú desplegable de usuario */
+.user-dropdown {
+  position: relative;
+}
+
+.user-dropdown > a {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dropdown-arrow {
+  font-size: 10px;
+  transition: transform 0.3s ease;
+}
+
+.user-dropdown:hover .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: #2d0a1f;
+  min-width: 180px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  margin-top: 8px;
+  padding: 8px 0;
+  z-index: 1001;
+  border: 1px solid rgba(255, 0, 255, 0.2);
+}
+
+.user-dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.dropdown-menu li {
+  list-style: none;
+  margin: 0;
+}
+
+.dropdown-menu li a {
+  display: block;
+  padding: 12px 20px;
+  color: #fff !important;
+  text-decoration: none;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+}
+
+.dropdown-menu li a:hover {
+  background-color: rgba(255, 0, 255, 0.15) !important;
+}
+
+.dropdown-menu li a.logout-link {
+  color: #ff6b6b !important;
+  font-weight: 600 !important;
+}
+
+.dropdown-menu li a.logout-link:hover {
+  background-color: rgba(255, 107, 107, 0.15) !important;
+}
+
 /* Contenedor dentro del hero */
 
 .hero .container {
@@ -402,7 +469,7 @@ header nav ul li.user-name-link > a.user-profile-link:hover {
 
 .events-table th {
     background: #415a77;
-    color: white;
+    color: white !important;
     padding: 10px;
     text-align: left;
     font-weight: 600;

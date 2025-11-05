@@ -1,5 +1,6 @@
 <?php
-//configuración de base de datos
+//configuración de base de datos y constantes
+require_once '../config/config.php';
 require_once '../config/database.php';
 
 
@@ -482,10 +483,10 @@ function obtener_eventos_activos() {
     try {
         $conexion = db_connection();
         
-        // Obtener eventos de hoy y futuros
+        // Obtener eventos
         $sql = "SELECT id, nombre, descripcion, fecha, cupo_total, cantidad_anticipadas, precio_anticipadas, precio_en_puerta 
                 FROM eventos 
-                WHERE fecha >= CURDATE() 
+                WHERE fecha >= NOW() - INTERVAL 1 DAY 
                 ORDER BY fecha ASC";
         
         $stmt = $conexion->prepare($sql);

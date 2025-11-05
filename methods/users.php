@@ -376,16 +376,16 @@ if ($_POST) {
             session_start();
         }
         if (!isset($_SESSION['loggedin']) || !$_SESSION['loggedin'] || !isset($_SESSION['usuario_rol']) || $_SESSION['usuario_rol'] != 1) {
-            header('Location: ' . BASE_URL . 'index.php?page=admin&error=' . urlencode('No tienes permisos para realizar esta acción'));
+            header('Location: ' . BASE_URL . 'index.php?page=admin-usuarios&error=' . urlencode('No tienes permisos para realizar esta acción'));
             exit;
         }
         
         $resultado = crear_usuario($_POST);
         
         if ($resultado['success']) {
-            header('Location: ' . BASE_URL . 'index.php?page=admin&success=true&message=' . urlencode($resultado['message']));
+            header('Location: ' . BASE_URL . 'index.php?page=admin-usuarios&success=' . urlencode($resultado['message']));
         } else {
-            header('Location: ' . BASE_URL . 'index.php?page=admin&error=true&message=' . urlencode($resultado['message']));
+            header('Location: ' . BASE_URL . 'index.php?page=admin-usuarios&error=' . urlencode($resultado['message']));
         }
         exit;
     } else {
